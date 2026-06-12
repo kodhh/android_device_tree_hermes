@@ -23,8 +23,8 @@ TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := cortex-a53
 
-# Build old-style zip files (required for ota updater)
-BLOCK_BASED_OTA := false
+# system-as-root (required for Android 10+)
+BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
 
 # Kernel
 BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2
@@ -97,6 +97,9 @@ TARGET_HAS_LEGACY_CAMERA_HAL1 := true
 # Low-ram
 MALLOC_SVELTE := true
 
+# DT2W (Double Tap to Wake)
+TARGET_TAP_TO_WAKE_NODE := "/sys/android_touch/doubletap2wake"
+
 # Device specific props
 TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
 
@@ -121,7 +124,9 @@ WIFI_DRIVER_STATE_ON := 1
 WIFI_DRIVER_STATE_OFF := 0
 
 # Recovery
-TARGET_RECOVERY_FSTAB := vendor/xiaomi/hermes/proprietary/vendor/etc/fstab.$(TARGET_BOARD_PLATFORM)
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.$(TARGET_BOARD_PLATFORM)
+TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+TARGET_USES_MKE2FS := true
 
 # Sepolicy
 #BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy
@@ -141,16 +146,17 @@ endif
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 
-# Treble
-#BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
-#PRODUCT_FULL_TREBLE_OVERRIDE := true
-#BOARD_VNDK_RUNTIME_DISABLE := true
-TARGET_COPY_OUT_VENDOR := system/vendor
-#BOARD_VNDK_VERSION := current
+# Treble / VNDK (required for Android 10+)
+TARGET_COPY_OUT_VENDOR := vendor
+BOARD_VNDK_VERSION := current
+PRODUCT_EXTRA_VNDK_VERSIONS := 28
 
 # Vendor
-VENDOR_SECURITY_PATCH := 2016-12-01
+VENDOR_SECURITY_PATCH := 2020-05-05
 COMPILE_MTK_PROPRIETARY := true
+
+# Build broken rules
+BUILD_BROKEN_DUP_RULES := true
 
 # Legacy blob support
 #TARGET_PROCESS_SDK_VERSION_OVERRIDE := /vendor/xbin/mnld=27
