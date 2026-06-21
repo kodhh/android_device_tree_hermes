@@ -1,340 +1,3 @@
-From 1059f515f20ce3d75b74b45d348743b761639734 Mon Sep 17 00:00:00 2001
-From: bilux <i.bilux@gmail.com>
-Date: Mon, 23 Mar 2020 10:28:19 +0100
-Subject: [PATCH] Add support of YUV color profiles
-
-Signed-off-by: bilux <i.bilux@gmail.com>
----
- media/libstagefright/ACodec.cpp               |   7 +-
- media/libstagefright/Android.bp               |   2 +
- media/libstagefright/CameraSource.cpp         |  24 +
- .../libstagefright/colorconversion/Android.bp |   2 +
- .../colorconversion/ColorConverter.cpp        | 179 +++++
- .../colorconversion/inc/DpBlitStream.h        | 209 ++++++
- .../colorconversion/inc/DpConfig.h            |  24 +
- .../colorconversion/inc/DpDataType.h          | 631 ++++++++++++++++++
- .../media/stagefright/ColorConverter.h        |  10 +
- media/libstagefright/omx/OMXUtils.cpp         |  13 +-
- 10 files changed, 1099 insertions(+), 2 deletions(-)
- create mode 100644 media/libstagefright/colorconversion/inc/DpBlitStream.h
- create mode 100644 media/libstagefright/colorconversion/inc/DpConfig.h
- create mode 100644 media/libstagefright/colorconversion/inc/DpDataType.h
-
-diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 0242e95..71f3138 100644
---- a/media/libstagefright/ACodec.cpp
-+++ b/media/libstagefright/ACodec.cpp
-@@ -3224,7 +3224,12 @@ status_t ACodec::setSupportedOutputFormat(bool getLegacyFlexibleFormat) {
-                 || format.eColorFormat == OMX_COLOR_FormatYUV420PackedPlanar
-                 || format.eColorFormat == OMX_COLOR_FormatYUV420SemiPlanar
-                 || format.eColorFormat == OMX_COLOR_FormatYUV420PackedSemiPlanar
--                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar) {
-+                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar
-+#ifdef MTK_HARDWARE
-+                || format.eColorFormat == HAL_PIXEL_FORMAT_YV12
-+                || format.eColorFormat == OMX_MTK_COLOR_FormatYV12
-+#endif
-+                ) {
-             break;
-         }
-         // find best legacy non-standard format
-diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
-index 924d460..a0f3d83 100644
---- a/media/libstagefright/Android.bp
-+++ b/media/libstagefright/Android.bp
-@@ -175,6 +175,7 @@ cc_library_shared {
-         "android.hardware.media.omx@1.0",
-         "android.hardware.graphics.allocator@2.0",
-         "android.hardware.graphics.mapper@2.0",
-+        "libdpframework"
-     ],
- 
-     static_libs: [
-@@ -197,6 +198,7 @@ cc_library_shared {
- 
-     export_include_dirs: [
-         "include",
-+        "colorconversion/inc",
-     ],
- 
-     cflags: [
-diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
-index 3bca728..1c6805f 100644
---- a/media/libstagefright/CameraSource.cpp
-+++ b/media/libstagefright/CameraSource.cpp
-@@ -42,6 +42,10 @@
- #define UNUSED_UNLESS_VERBOSE(x)
- #endif
- 
-+#ifndef MTK_HARDWARE
-+#define MTK_HARDWARE
-+#endif
-+
- namespace android {
- 
- static const int64_t CAMERA_SOURCE_TIMEOUT_NS = 3000000000LL;
-@@ -134,14 +138,34 @@ static int32_t getColorFormat(const char* colorFormat) {
-         return -1;
-     }
- 
-+#ifdef MTK_HARDWARE
-+    ALOGD("getColorFormat(%s)", colorFormat);
-+
-+    if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420P)) {
-+        // YV12
-+        return OMX_MTK_COLOR_FormatYV12;
-+    }
-+
-+    if (!strcmp(colorFormat, "yuv420i-yyuvyy-3plane" /*MtkCameraParameters::PIXEL_FORMAT_YUV420I)*/)) {
-+        // i420
-+        return OMX_COLOR_FormatYUV420Planar;
-+    }
-+#else
-     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420P)) {
-        return OMX_COLOR_FormatYUV420Planar;
-     }
-+#endif
- 
-     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV422SP)) {
-        return OMX_COLOR_FormatYUV422SemiPlanar;
-     }
- 
-+#ifdef MTK_HARDWARE
-+    if (!strcmp(colorFormat, "bitstream")) {
-+       return OMX_COLOR_FormatYUV420Planar;
-+    }
-+#endif
-+
-     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420SP)) {
-         return OMX_COLOR_FormatYUV420SemiPlanar;
-     }
-diff --git a/media/libstagefright/colorconversion/Android.bp b/media/libstagefright/colorconversion/Android.bp
-index 16e9ded..ebbfa76 100644
---- a/media/libstagefright/colorconversion/Android.bp
-+++ b/media/libstagefright/colorconversion/Android.bp
-@@ -8,11 +8,13 @@ cc_library_static {
- 
-     include_dirs: [
-         "frameworks/native/include/media/openmax",
-+        "frameworks/av/media/libstagefright/colorconversion/inc",
-     ],
- 
-     shared_libs: [
-         "libui",
-         "libnativewindow",
-+        "libdpframework",
-     ],
- 
-     static_libs: ["libyuv_static"],
-diff --git a/media/libstagefright/colorconversion/ColorConverter.cpp b/media/libstagefright/colorconversion/ColorConverter.cpp
-index a1873bc..3c3668f 100644
---- a/media/libstagefright/colorconversion/ColorConverter.cpp
-+++ b/media/libstagefright/colorconversion/ColorConverter.cpp
-@@ -30,6 +30,19 @@
- #include <functional>
- #include <sys/time.h>
- 
-+#ifndef MTK_HARDWARE
-+#define MTK_HARDWARE
-+#endif
-+
-+#ifdef MTK_HARDWARE
-+#include <OMX_IVCommon.h>
-+#include <cutils/properties.h>
-+#include <DpBlitStream.h>
-+#include <stdio.h>
-+#include <utils/Timers.h>
-+#include <inttypes.h>
-+#endif
-+
- #define USE_LIBYUV
- #define PERF_PROFILING 0
- 
-@@ -59,6 +72,16 @@ ColorConverter::~ColorConverter() {
- }
- 
- bool ColorConverter::isValid() const {
-+#ifdef MTK_HARDWARE
-+//ALOGD("***isValid() mSrcFormat=0x%x,mDstFormat=0x%x",mSrcFormat,mDstFormat);
-+    if ((mDstFormat != OMX_COLOR_Format16bitRGB565) &&
-+        (mDstFormat != OMX_COLOR_Format32bitARGB8888)) {
-+        return ERROR_UNSUPPORTED;
-+    }
-+    if ((mSrcFormat == OMX_COLOR_Format32bitARGB8888) ||
-+        (mSrcFormat == OMX_MTK_COLOR_FormatYV12))
-+        return true;
-+#endif
-     switch (mSrcFormat) {
-         case OMX_COLOR_FormatYUV420Planar16:
-             if (mDstFormat == OMX_COLOR_FormatYUV444Y410) {
-@@ -74,6 +97,13 @@ bool ColorConverter::isValid() const {
-         case OMX_QCOM_COLOR_FormatYVU420SemiPlanar:
-         case OMX_TI_COLOR_FormatYUV420PackedSemiPlanar:
-             return mDstFormat == OMX_COLOR_Format16bitRGB565;
-+#ifdef MTK_HARDWARE
-+        case OMX_COLOR_Format32bitARGB8888:
-+        case OMX_MTK_COLOR_FormatYV12:
-+        case OMX_COLOR_FormatVendorMTKYUV:
-+        case OMX_COLOR_FormatVendorMTKYUV_FCM:
-+            return true;
-+#endif
- 
-         case OMX_COLOR_FormatYUV420SemiPlanar:
- #ifdef USE_LIBYUV
-@@ -977,4 +1007,153 @@ uint8_t *ColorConverter::initClip() {
-     return &mClip[-kClipMin];
- }
- 
-+#ifdef MTK_HARDWARE
-+status_t ColorConverter::convertYUVToRGBHW(const BitmapParams &src, const BitmapParams &dst)
-+{
-+    ALOGD("srcWidth(%zu), srcHeight(%zu), srcCropLeft(%zu), srcCropTop(%zu), srcCropRight(%zu), srcCropBottom(%zu)",
-+       src.mWidth, src.mHeight, src.mCropLeft, src.mCropTop, src.mCropRight, src.mCropBottom);
-+    ALOGD("dstWidth(%zu), dstHeight(%zu), dstCropLeft(%zu), dstCropTop(%zu), dstCropRight(%zu), dstCropBottom(%zu)",
-+       dst.mWidth, dst.mHeight, dst.mCropLeft, dst.mCropTop, dst.mCropRight, dst.mCropBottom);
-+    DpBlitStream *blitStream = new DpBlitStream();
-+    //int srcWidth = src.cropWidth();
-+    //int srcHeight = src.cropHeight();
-+    unsigned int srcWStride = src.mWidth;
-+    unsigned int srcHStride = src.mHeight;
-+
-+    DpRect srcRoi;
-+    srcRoi.x = 0;
-+    srcRoi.y = 0;
-+    srcRoi.w = dst.mWidth;
-+    srcRoi.h = dst.mHeight;
-+
-+    ALOGD("src stride aligned, w(%d), h(%d)", srcWStride, srcHStride);
-+
-+    unsigned int dstWStride = dst.mWidth ;
-+    unsigned int dstHStride = dst.mHeight ;
-+    char name_yuv[100];
-+    char retriever_yuv_propty[100];
-+    char name_rgb[100];
-+    char retriever_propty_rgb[100];
-+
-+    if (mSrcFormat == OMX_COLOR_FormatYUV420Planar) {
-+    char* planar[3];
-+    unsigned int length[3];
-+    planar[0] = (char*)src.mBits;
-+    length[0] = srcWStride*srcHStride;
-+    planar[1] = planar[0] + length[0];
-+    length[1] = srcWStride*srcHStride/4;
-+    planar[2] = planar[1] + length[1];
-+    length[2] = length[1];
-+    ALOGD("Yaddr(%p), Uaddr(%p), Vaddr(%p) YUV420P", planar[0], planar[1], planar[2]);
-+    ALOGD("Ylen(%d), Ulen(%d), Vlen(%d)", length[0], length[1], length[2]);
-+
-+    blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 3);
-+    blitStream->setSrcConfig(srcWStride, srcHStride, eYUV_420_3P, eInterlace_None, &srcRoi);
-+    }
-+    else if (mSrcFormat == OMX_MTK_COLOR_FormatYV12) {
-+        char* planar[3];
-+        unsigned int length[3];
-+        planar[0] = (char*)src.mBits;
-+        length[0] = srcWStride*srcHStride;
-+        planar[1] = planar[0] + length[0];
-+        length[1] = (((srcWStride>>1)+0xf) & (~0xf))*srcHStride/2;
-+        planar[2] = planar[1] + length[1];
-+        length[2] = length[1];
-+        ALOGD("Yaddr(%p), Uaddr(%p), Vaddr(%p) YV12", planar[0], planar[1], planar[2]);
-+        ALOGD("Ylen(%d), Ulen(%d), Vlen(%d)", length[0], length[1], length[2]);
-+
-+        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 3);
-+        //blitStream->setSrcConfig(srcWStride, srcHStride, eYV12, eInterlace_None, &srcRoi);
-+        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride, (((srcWStride>>1)+0xf) & (~0xf)), eYV12, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
-+    }
-+    else if (mSrcFormat == OMX_COLOR_Format32bitARGB8888) {
-+        char* planar[1];
-+        unsigned int length[1];
-+        planar[0] = (char*)src.mBits;
-+        length[0] = srcWStride*srcHStride*4;
-+        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 1);
-+        blitStream->setSrcConfig(srcWStride, srcHStride, eRGBA8888, eInterlace_None, &srcRoi);
-+    }
-+    else if (mSrcFormat == OMX_COLOR_FormatVendorMTKYUV) {
-+        char* planar[2];
-+        unsigned int length[2];
-+        planar[0] = (char*)src.mBits;
-+        length[0] = srcWStride*srcHStride;
-+        planar[1] = planar[0] + length[0];
-+        length[1] = srcWStride*srcHStride/2;
-+        ALOGD("Yaddr(%p), Caddr(%p)", planar[0], planar[1]);
-+        ALOGD("Ylen(%d), Clen(%d)", length[0], length[1]);
-+
-+        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 2);
-+        //blitStream->setSrcConfig(srcWStride, srcHStride, eNV12_BLK, eInterlace_None, &srcRoi);
-+        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride * 32, srcWStride * 16, eNV12_BLK, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
-+    }
-+    else if (mSrcFormat == OMX_COLOR_FormatVendorMTKYUV_FCM) {
-+        char* planar[2];
-+        unsigned int length[2];
-+        planar[0] = (char*)src.mBits;
-+        length[0] = srcWStride*srcHStride;
-+        planar[1] = planar[0] + length[0];
-+        length[1] = srcWStride*srcHStride/2;
-+        ALOGD("Yaddr(%p), Caddr(%p)", planar[0], planar[1]);
-+        ALOGD("Ylen(%d), Clen(%d)", length[0], length[1]);
-+
-+        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 2);
-+        //blitStream->setSrcConfig(srcWStride, srcHStride, eNV12_BLK_FCM, eInterlace_None, &srcRoi);
-+        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride * 32, srcWStride * 16, eNV12_BLK_FCM, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
-+    }
-+    ALOGD("dst addr(%p), w(%d), h(%d)", dst.mBits, dstWStride, dstHStride);
-+    if (mDstFormat == OMX_COLOR_Format16bitRGB565) {
-+        blitStream->setDstBuffer(dst.mBits, dst.mWidth * dst.mHeight * 2);
-+        blitStream->setDstConfig(dst.mWidth, dst.mHeight, eRGB565);
-+    }
-+    else if (mDstFormat == OMX_COLOR_Format32bitARGB8888) {
-+        blitStream->setDstBuffer(dst.mBits, dst.mWidth * dst.mHeight * 4);
-+        //blitStream->setDstConfig(dst.mWidth, dst.mHeight, eARGB8888);
-+        blitStream->setDstConfig(dst.mWidth, dst.mHeight, eRGBA8888);
-+    }
-+
-+    sprintf(name_yuv, "/sdcard/retriever_%" PRId64 "_%zu_%zu.yuv",systemTime(),src.mWidth,src.mHeight);
-+    sprintf(retriever_yuv_propty, "retriever.dump.yuv");
-+    dumpColorConverterData(name_yuv,src.mBits,(src.mWidth*src.mHeight)*2,retriever_yuv_propty);
-+
-+    //Add Sharpness in Video Thumbnail
-+    blitStream->setTdshp(1);
-+    bool bRet = blitStream->invalidate();
-+    ALOGI("blitStream return %d.", bRet);
-+
-+    sprintf(name_rgb, "/sdcard/retriever_%" PRId64 "_%zu_%zu.rgb",systemTime(),dst.mWidth,dst.mHeight);
-+    sprintf(retriever_propty_rgb, "retriever.dump.rgb");
-+    if (mDstFormat == OMX_COLOR_Format16bitRGB565){
-+        dumpColorConverterData(name_rgb,dst.mBits, dst.mWidth*dst.mHeight*2, retriever_propty_rgb);
-+    }else if(mDstFormat == OMX_COLOR_Format32bitARGB8888){
-+        dumpColorConverterData(name_rgb,dst.mBits, dst.mWidth*dst.mHeight*4, retriever_propty_rgb);
-+    }
-+
-+    if(!bRet)
-+        return OK;
-+    else
-+        return UNKNOWN_ERROR;
-+
-+    return OK;
-+}
-+
-+void ColorConverter::dumpColorConverterData(const char * filepath, const void * buffer, size_t size,const char * propty) {
-+
-+    char value[PROPERTY_VALUE_MAX];
-+    property_get(propty, value, "0");
-+    int bflag=atoi(value);
-+
-+    if (bflag) {
-+       FILE * fp= fopen (filepath, "w");
-+       if (fp!=NULL) {
-+            fwrite(buffer,size,1,fp);
-+            fclose(fp);
-+       } else {
-+            ALOGV("dump %s fail",propty);
-+       }
-+    }
-+}
-+#endif
-+
- }  // namespace android
 diff --git a/media/libstagefright/colorconversion/inc/DpBlitStream.h b/media/libstagefright/colorconversion/inc/DpBlitStream.h
 new file mode 100644
 index 0000000..cad8f5b
@@ -1217,8 +880,323 @@ index 0000000..a619bc8
 +#define VENC_ENABLE_FLAG    (0x08967)
 +
 +#endif  // __DP_DATA_TYPE_H__
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 55e8130..3053eac 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -3286,7 +3286,12 @@ status_t ACodec::setSupportedOutputFormat(bool getLegacyFlexibleFormat) {
+                 || format.eColorFormat == OMX_COLOR_FormatYUV420PackedPlanar
+                 || format.eColorFormat == OMX_COLOR_FormatYUV420SemiPlanar
+                 || format.eColorFormat == OMX_COLOR_FormatYUV420PackedSemiPlanar
+-                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar) {
++                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar
++#ifdef MTK_HARDWARE
++                || format.eColorFormat == HAL_PIXEL_FORMAT_YV12
++                || format.eColorFormat == OMX_MTK_COLOR_FormatYV12
++#endif
++                ) {
+             break;
+         }
+         // find best legacy non-standard format
+diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
+index 7eab230..fcdc4d0 100644
+--- a/media/libstagefright/Android.bp
++++ b/media/libstagefright/Android.bp
+@@ -203,6 +203,7 @@ cc_library {
+         "android.hidl.allocator@1.0",
+         "android.hardware.cas.native@1.0",
+         "android.hardware.media.omx@1.0",
++        "libdpframework",
+     ],
+ 
+     static_libs: [
+@@ -233,6 +234,7 @@ cc_library {
+ 
+     export_include_dirs: [
+         "include",
++        "colorconversion/inc",
+     ],
+ 
+     cflags: [
+diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
+index 3bca728..1c6805f 100644
+--- a/media/libstagefright/CameraSource.cpp
++++ b/media/libstagefright/CameraSource.cpp
+@@ -42,6 +42,10 @@
+ #define UNUSED_UNLESS_VERBOSE(x)
+ #endif
+ 
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
+ namespace android {
+ 
+ static const int64_t CAMERA_SOURCE_TIMEOUT_NS = 3000000000LL;
+@@ -134,14 +138,34 @@ static int32_t getColorFormat(const char* colorFormat) {
+         return -1;
+     }
+ 
++#ifdef MTK_HARDWARE
++    ALOGD("getColorFormat(%s)", colorFormat);
++
++    if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420P)) {
++        // YV12
++        return OMX_MTK_COLOR_FormatYV12;
++    }
++
++    if (!strcmp(colorFormat, "yuv420i-yyuvyy-3plane" /*MtkCameraParameters::PIXEL_FORMAT_YUV420I)*/)) {
++        // i420
++        return OMX_COLOR_FormatYUV420Planar;
++    }
++#else
+     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420P)) {
+        return OMX_COLOR_FormatYUV420Planar;
+     }
++#endif
+ 
+     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV422SP)) {
+        return OMX_COLOR_FormatYUV422SemiPlanar;
+     }
+ 
++#ifdef MTK_HARDWARE
++    if (!strcmp(colorFormat, "bitstream")) {
++       return OMX_COLOR_FormatYUV420Planar;
++    }
++#endif
++
+     if (!strcmp(colorFormat, CameraParameters::PIXEL_FORMAT_YUV420SP)) {
+         return OMX_COLOR_FormatYUV420SemiPlanar;
+     }
+diff --git a/media/libstagefright/colorconversion/Android.bp b/media/libstagefright/colorconversion/Android.bp
+index ba57497..caf0a66 100644
+--- a/media/libstagefright/colorconversion/Android.bp
++++ b/media/libstagefright/colorconversion/Android.bp
+@@ -8,11 +8,13 @@ cc_library_static {
+ 
+     include_dirs: [
+         "frameworks/native/include/media/openmax",
++        "frameworks/av/media/libstagefright/colorconversion/inc",
+     ],
+ 
+     shared_libs: [
+         "libui",
+         "libnativewindow",
++        "libdpframework",
+     ],
+ 
+     static_libs: ["libyuv_static"],
+diff --git a/media/libstagefright/colorconversion/ColorConverter.cpp b/media/libstagefright/colorconversion/ColorConverter.cpp
+index c491d80..dce7f8a 100644
+--- a/media/libstagefright/colorconversion/ColorConverter.cpp
++++ b/media/libstagefright/colorconversion/ColorConverter.cpp
+@@ -32,6 +32,19 @@
+ #include <functional>
+ #include <sys/time.h>
+ 
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
++#ifdef MTK_HARDWARE
++#include <OMX_IVCommon.h>
++#include <cutils/properties.h>
++#include <DpBlitStream.h>
++#include <stdio.h>
++#include <utils/Timers.h>
++#include <inttypes.h>
++#endif
++
+ #define USE_LIBYUV
+ #define PERF_PROFILING 0
+ 
+@@ -79,6 +92,16 @@ ColorConverter::~ColorConverter() {
+ }
+ 
+ bool ColorConverter::isValid() const {
++#ifdef MTK_HARDWARE
++//ALOGD("***isValid() mSrcFormat=0x%x,mDstFormat=0x%x",mSrcFormat,mDstFormat);
++    if ((mDstFormat != OMX_COLOR_Format16bitRGB565) &&
++        (mDstFormat != OMX_COLOR_Format32bitARGB8888)) {
++        return ERROR_UNSUPPORTED;
++    }
++    if ((mSrcFormat == OMX_COLOR_Format32bitARGB8888) ||
++        (mSrcFormat == OMX_MTK_COLOR_FormatYV12))
++        return true;
++#endif
+     switch (mSrcFormat) {
+         case OMX_COLOR_FormatYUV420Planar16:
+             if (mDstFormat == OMX_COLOR_FormatYUV444Y410) {
+@@ -94,6 +117,13 @@ bool ColorConverter::isValid() const {
+         case OMX_QCOM_COLOR_FormatYVU420SemiPlanar:
+         case OMX_TI_COLOR_FormatYUV420PackedSemiPlanar:
+             return mDstFormat == OMX_COLOR_Format16bitRGB565;
++#ifdef MTK_HARDWARE
++        case OMX_COLOR_Format32bitARGB8888:
++        case OMX_MTK_COLOR_FormatYV12:
++        case OMX_COLOR_FormatVendorMTKYUV:
++        case OMX_COLOR_FormatVendorMTKYUV_FCM:
++            return true;
++#endif
+ 
+         case OMX_COLOR_FormatYUV420SemiPlanar:
+ #ifdef USE_LIBYUV
+@@ -1034,4 +1064,153 @@ uint8_t *ColorConverter::initClip() {
+     return &mClip[-kClipMin];
+ }
+ 
++#ifdef MTK_HARDWARE
++status_t ColorConverter::convertYUVToRGBHW(const BitmapParams &src, const BitmapParams &dst)
++{
++    ALOGD("srcWidth(%zu), srcHeight(%zu), srcCropLeft(%zu), srcCropTop(%zu), srcCropRight(%zu), srcCropBottom(%zu)",
++       src.mWidth, src.mHeight, src.mCropLeft, src.mCropTop, src.mCropRight, src.mCropBottom);
++    ALOGD("dstWidth(%zu), dstHeight(%zu), dstCropLeft(%zu), dstCropTop(%zu), dstCropRight(%zu), dstCropBottom(%zu)",
++       dst.mWidth, dst.mHeight, dst.mCropLeft, dst.mCropTop, dst.mCropRight, dst.mCropBottom);
++    DpBlitStream *blitStream = new DpBlitStream();
++    //int srcWidth = src.cropWidth();
++    //int srcHeight = src.cropHeight();
++    unsigned int srcWStride = src.mWidth;
++    unsigned int srcHStride = src.mHeight;
++
++    DpRect srcRoi;
++    srcRoi.x = 0;
++    srcRoi.y = 0;
++    srcRoi.w = dst.mWidth;
++    srcRoi.h = dst.mHeight;
++
++    ALOGD("src stride aligned, w(%d), h(%d)", srcWStride, srcHStride);
++
++    unsigned int dstWStride = dst.mWidth ;
++    unsigned int dstHStride = dst.mHeight ;
++    char name_yuv[100];
++    char retriever_yuv_propty[100];
++    char name_rgb[100];
++    char retriever_propty_rgb[100];
++
++    if (mSrcFormat == OMX_COLOR_FormatYUV420Planar) {
++    char* planar[3];
++    unsigned int length[3];
++    planar[0] = (char*)src.mBits;
++    length[0] = srcWStride*srcHStride;
++    planar[1] = planar[0] + length[0];
++    length[1] = srcWStride*srcHStride/4;
++    planar[2] = planar[1] + length[1];
++    length[2] = length[1];
++    ALOGD("Yaddr(%p), Uaddr(%p), Vaddr(%p) YUV420P", planar[0], planar[1], planar[2]);
++    ALOGD("Ylen(%d), Ulen(%d), Vlen(%d)", length[0], length[1], length[2]);
++
++    blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 3);
++    blitStream->setSrcConfig(srcWStride, srcHStride, eYUV_420_3P, eInterlace_None, &srcRoi);
++    }
++    else if (mSrcFormat == OMX_MTK_COLOR_FormatYV12) {
++        char* planar[3];
++        unsigned int length[3];
++        planar[0] = (char*)src.mBits;
++        length[0] = srcWStride*srcHStride;
++        planar[1] = planar[0] + length[0];
++        length[1] = (((srcWStride>>1)+0xf) & (~0xf))*srcHStride/2;
++        planar[2] = planar[1] + length[1];
++        length[2] = length[1];
++        ALOGD("Yaddr(%p), Uaddr(%p), Vaddr(%p) YV12", planar[0], planar[1], planar[2]);
++        ALOGD("Ylen(%d), Ulen(%d), Vlen(%d)", length[0], length[1], length[2]);
++
++        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 3);
++        //blitStream->setSrcConfig(srcWStride, srcHStride, eYV12, eInterlace_None, &srcRoi);
++        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride, (((srcWStride>>1)+0xf) & (~0xf)), eYV12, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
++    }
++    else if (mSrcFormat == OMX_COLOR_Format32bitARGB8888) {
++        char* planar[1];
++        unsigned int length[1];
++        planar[0] = (char*)src.mBits;
++        length[0] = srcWStride*srcHStride*4;
++        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 1);
++        blitStream->setSrcConfig(srcWStride, srcHStride, eRGBA8888, eInterlace_None, &srcRoi);
++    }
++    else if (mSrcFormat == OMX_COLOR_FormatVendorMTKYUV) {
++        char* planar[2];
++        unsigned int length[2];
++        planar[0] = (char*)src.mBits;
++        length[0] = srcWStride*srcHStride;
++        planar[1] = planar[0] + length[0];
++        length[1] = srcWStride*srcHStride/2;
++        ALOGD("Yaddr(%p), Caddr(%p)", planar[0], planar[1]);
++        ALOGD("Ylen(%d), Clen(%d)", length[0], length[1]);
++
++        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 2);
++        //blitStream->setSrcConfig(srcWStride, srcHStride, eNV12_BLK, eInterlace_None, &srcRoi);
++        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride * 32, srcWStride * 16, eNV12_BLK, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
++    }
++    else if (mSrcFormat == OMX_COLOR_FormatVendorMTKYUV_FCM) {
++        char* planar[2];
++        unsigned int length[2];
++        planar[0] = (char*)src.mBits;
++        length[0] = srcWStride*srcHStride;
++        planar[1] = planar[0] + length[0];
++        length[1] = srcWStride*srcHStride/2;
++        ALOGD("Yaddr(%p), Caddr(%p)", planar[0], planar[1]);
++        ALOGD("Ylen(%d), Clen(%d)", length[0], length[1]);
++
++        blitStream->setSrcBuffer((void**)planar, (unsigned int*)length, 2);
++        //blitStream->setSrcConfig(srcWStride, srcHStride, eNV12_BLK_FCM, eInterlace_None, &srcRoi);
++        blitStream->setSrcConfig(srcWStride, srcHStride, srcWStride * 32, srcWStride * 16, eNV12_BLK_FCM, DP_PROFILE_BT601, eInterlace_None, &srcRoi);
++    }
++    ALOGD("dst addr(%p), w(%d), h(%d)", dst.mBits, dstWStride, dstHStride);
++    if (mDstFormat == OMX_COLOR_Format16bitRGB565) {
++        blitStream->setDstBuffer(dst.mBits, dst.mWidth * dst.mHeight * 2);
++        blitStream->setDstConfig(dst.mWidth, dst.mHeight, eRGB565);
++    }
++    else if (mDstFormat == OMX_COLOR_Format32bitARGB8888) {
++        blitStream->setDstBuffer(dst.mBits, dst.mWidth * dst.mHeight * 4);
++        //blitStream->setDstConfig(dst.mWidth, dst.mHeight, eARGB8888);
++        blitStream->setDstConfig(dst.mWidth, dst.mHeight, eRGBA8888);
++    }
++
++    sprintf(name_yuv, "/sdcard/retriever_%" PRId64 "_%zu_%zu.yuv",systemTime(),src.mWidth,src.mHeight);
++    sprintf(retriever_yuv_propty, "retriever.dump.yuv");
++    dumpColorConverterData(name_yuv,src.mBits,(src.mWidth*src.mHeight)*2,retriever_yuv_propty);
++
++    //Add Sharpness in Video Thumbnail
++    blitStream->setTdshp(1);
++    bool bRet = blitStream->invalidate();
++    ALOGI("blitStream return %d.", bRet);
++
++    sprintf(name_rgb, "/sdcard/retriever_%" PRId64 "_%zu_%zu.rgb",systemTime(),dst.mWidth,dst.mHeight);
++    sprintf(retriever_propty_rgb, "retriever.dump.rgb");
++    if (mDstFormat == OMX_COLOR_Format16bitRGB565){
++        dumpColorConverterData(name_rgb,dst.mBits, dst.mWidth*dst.mHeight*2, retriever_propty_rgb);
++    }else if(mDstFormat == OMX_COLOR_Format32bitARGB8888){
++        dumpColorConverterData(name_rgb,dst.mBits, dst.mWidth*dst.mHeight*4, retriever_propty_rgb);
++    }
++
++    if(!bRet)
++        return OK;
++    else
++        return UNKNOWN_ERROR;
++
++    return OK;
++}
++
++void ColorConverter::dumpColorConverterData(const char * filepath, const void * buffer, size_t size,const char * propty) {
++
++    char value[PROPERTY_VALUE_MAX];
++    property_get(propty, value, "0");
++    int bflag=atoi(value);
++
++    if (bflag) {
++       FILE * fp= fopen (filepath, "w");
++       if (fp!=NULL) {
++            fwrite(buffer,size,1,fp);
++            fclose(fp);
++       } else {
++            ALOGV("dump %s fail",propty);
++       }
++    }
++}
++#endif
++
+ }  // namespace android
 diff --git a/media/libstagefright/include/media/stagefright/ColorConverter.h b/media/libstagefright/include/media/stagefright/ColorConverter.h
-index 2d06111..5d9782d 100644
+index 75b0d8e..aebd939 100644
 --- a/media/libstagefright/include/media/stagefright/ColorConverter.h
 +++ b/media/libstagefright/include/media/stagefright/ColorConverter.h
 @@ -25,6 +25,10 @@
@@ -1232,7 +1210,7 @@ index 2d06111..5d9782d 100644
  namespace android {
  
  struct ColorConverter {
-@@ -101,6 +105,12 @@ private:
+@@ -113,6 +117,12 @@ private:
  
      ColorConverter(const ColorConverter &);
      ColorConverter &operator=(const ColorConverter &);
@@ -1246,10 +1224,10 @@ index 2d06111..5d9782d 100644
  
  }  // namespace android
 diff --git a/media/libstagefright/omx/OMXUtils.cpp b/media/libstagefright/omx/OMXUtils.cpp
-index f7b569d..4ec234f 100644
+index 1b8493a..d71f705 100644
 --- a/media/libstagefright/omx/OMXUtils.cpp
 +++ b/media/libstagefright/omx/OMXUtils.cpp
-@@ -27,6 +27,10 @@
+@@ -28,6 +28,10 @@
  #include <media/hardware/HardwareAPI.h>
  #include <system/graphics-base.h>
  
@@ -1260,7 +1238,7 @@ index f7b569d..4ec234f 100644
  namespace android {
  
  status_t StatusFromOMXError(OMX_ERRORTYPE err) {
-@@ -215,7 +219,11 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
+@@ -222,7 +226,11 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
          fmt != OMX_COLOR_FormatYUV420PackedPlanar &&
          fmt != OMX_COLOR_FormatYUV420SemiPlanar &&
          fmt != OMX_COLOR_FormatYUV420PackedSemiPlanar &&
@@ -1273,7 +1251,7 @@ index f7b569d..4ec234f 100644
          ALOGW("do not know color format 0x%x = %d", fmt, fmt);
          if (fmt == OMX_COLOR_FormatYUV420Planar16) {
              ALOGW("Cannot describe color format OMX_COLOR_FormatYUV420Planar16");
-@@ -252,6 +260,9 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
+@@ -259,6 +267,9 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
      image.mPlane[image.Y].mVertSubsampling = 1;
  
      switch ((int)fmt) {
@@ -1283,6 +1261,3 @@ index f7b569d..4ec234f 100644
          case HAL_PIXEL_FORMAT_YV12:
              if (params.bUsingNativeBuffers) {
                  size_t ystride = align(params.nStride, 16);
--- 
-2.25.1
-

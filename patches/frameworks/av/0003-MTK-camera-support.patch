@@ -1,32 +1,5 @@
-From 9bb4b84219359cf9ee7151ba0dc30279e2ecf02c Mon Sep 17 00:00:00 2001
-From: bilux <i.bilux@gmail.com>
-Date: Sun, 22 Mar 2020 22:58:33 +0100
-Subject: [PATCH] MTK camera support
-
-1. add extra camera parameters.
-2. Add deprecated function definitions which the old blobs required.
-3. Handle extra MTK camera messages
-
-Signed-off-by: bilux <i.bilux@gmail.com>
----
- camera/Android.bp                             |   3 +
- camera/CameraParameters.cpp                   |  28 +
- camera/MtkCamera.cpp                          | 212 ++++++
- camera/MtkCameraParameters.cpp                | 515 ++++++++++++++
- camera/include/camera/CameraParameters.h      |  22 +
- camera/include/camera/MtkCamera.h             | 333 +++++++++
- camera/include/camera/MtkCameraParameters.h   | 651 ++++++++++++++++++
- services/camera/libcameraservice/Android.mk   |   2 +-
- .../libcameraservice/api1/CameraClient.cpp    | 342 ++++++++-
- .../libcameraservice/api1/CameraClient.h      |  27 +
- 10 files changed, 2133 insertions(+), 2 deletions(-)
- create mode 100644 camera/MtkCamera.cpp
- create mode 100644 camera/MtkCameraParameters.cpp
- create mode 100644 camera/include/camera/MtkCamera.h
- create mode 100644 camera/include/camera/MtkCameraParameters.h
-
 diff --git a/camera/Android.bp b/camera/Android.bp
-index 7cc0336..22aedc0 100644
+index 68ba155..afe12fd 100644
 --- a/camera/Android.bp
 +++ b/camera/Android.bp
 @@ -66,6 +66,8 @@ cc_library_shared {
@@ -1916,26 +1889,13 @@ index 0000000..42f0a3f
 +}; // namespace android
 +
 +#endif
-diff --git a/services/camera/libcameraservice/Android.mk b/services/camera/libcameraservice/Android.mk
-index 4686881..b8afbcb 100644
---- a/services/camera/libcameraservice/Android.mk
-+++ b/services/camera/libcameraservice/Android.mk
-@@ -99,7 +99,7 @@ LOCAL_C_INCLUDES += \
- LOCAL_EXPORT_C_INCLUDE_DIRS := \
-     frameworks/av/services/camera/libcameraservice
- 
--LOCAL_CFLAGS += -Wall -Wextra -Werror
-+LOCAL_CFLAGS += -Wall -Wextra -Wno-narrowing
- 
- ifeq ($(TARGET_HAS_LEGACY_CAMERA_HAL1),true)
-     LOCAL_CFLAGS += -DNO_CAMERA_SERVER
 diff --git a/services/camera/libcameraservice/api1/CameraClient.cpp b/services/camera/libcameraservice/api1/CameraClient.cpp
-index a5aa474..f26f4c4 100644
+index 40c8e19..22e676a 100644
 --- a/services/camera/libcameraservice/api1/CameraClient.cpp
 +++ b/services/camera/libcameraservice/api1/CameraClient.cpp
-@@ -26,6 +26,15 @@
- #include "device1/CameraHardwareInterface.h"
+@@ -27,6 +27,15 @@
  #include "CameraService.h"
+ #include "utils/CameraThreadState.h"
  
 +#ifndef MTK_HARDWARE
 +#define MTK_HARDWARE
@@ -1949,7 +1909,7 @@ index a5aa474..f26f4c4 100644
  namespace android {
  
  #define LOG1(...) ALOGD_IF(gLogLevel >= 1, __VA_ARGS__);
-@@ -97,9 +106,14 @@ status_t CameraClient::initialize(sp<CameraProviderManager> manager,
+@@ -93,8 +102,14 @@ status_t CameraClient::initialize(sp<CameraProviderManager> manager,
              (void *)(uintptr_t)mCameraId);
  
      // Enable zoom, error, focus, and metadata messages by default
@@ -1960,12 +1920,11 @@ index a5aa474..f26f4c4 100644
 +#else
      enableMsgType(CAMERA_MSG_ERROR | CAMERA_MSG_ZOOM | CAMERA_MSG_FOCUS |
                    CAMERA_MSG_PREVIEW_METADATA | CAMERA_MSG_FOCUS_MOVE);
--
 +#endif
+ 
      LOG1("CameraClient::initialize X (pid %d, id %d)", callingPid, mCameraId);
      return OK;
- }
-@@ -318,6 +332,12 @@ status_t CameraClient::setPreviewWindow(const sp<IBinder>& binder,
+@@ -315,6 +330,12 @@ status_t CameraClient::setPreviewWindow(const sp<IBinder>& binder,
          }
      }
  
@@ -1978,36 +1937,7 @@ index a5aa474..f26f4c4 100644
      if (result == NO_ERROR) {
          // Everything has succeeded.  Disconnect the old window and remember the
          // new window.
-@@ -375,14 +395,18 @@ status_t CameraClient::setPreviewCallbackTarget(
- 
- // start preview mode
- status_t CameraClient::startPreview() {
-+#ifndef MTK_HARDWARE
-     Mutex::Autolock lock(mLock);
-+#endif
-     LOG1("startPreview (pid %d)", getCallingPid());
-     return startCameraMode(CAMERA_PREVIEW_MODE);
- }
- 
- // start recording mode
- status_t CameraClient::startRecording() {
-+#ifndef MTK_HARDWARE
-     Mutex::Autolock lock(mLock);
-+#endif
-     LOG1("startRecording (pid %d)", getCallingPid());
-     return startCameraMode(CAMERA_RECORDING_MODE);
- }
-@@ -390,6 +414,9 @@ status_t CameraClient::startRecording() {
- // start preview or recording
- status_t CameraClient::startCameraMode(camera_mode mode) {
-     LOG1("startCameraMode(%d)", mode);
-+#ifdef MTK_HARDWARE
-+    Mutex::Autolock lock(mLock);
-+#endif
-     status_t result = checkPidAndHardware();
-     if (result != NO_ERROR) return result;
- 
-@@ -817,6 +844,10 @@ void CameraClient::disableMsgType(int32_t msgType) {
+@@ -795,6 +816,10 @@ void CameraClient::disableMsgType(int32_t msgType) {
  
  #define CHECK_MESSAGE_INTERVAL 10 // 10ms
  bool CameraClient::lockIfMessageWanted(int32_t msgType) {
@@ -2018,7 +1948,7 @@ index a5aa474..f26f4c4 100644
      int sleepCount = 0;
      while (mMsgEnabled & msgType) {
          if (mLock.tryLock() == NO_ERROR) {
-@@ -840,6 +871,7 @@ bool CameraClient::lockIfMessageWanted(int32_t msgType) {
+@@ -818,6 +843,7 @@ bool CameraClient::lockIfMessageWanted(int32_t msgType) {
      }
      ALOGW("lockIfMessageWanted(%d): dropped unwanted message", msgType);
      return false;
@@ -2026,7 +1956,7 @@ index a5aa474..f26f4c4 100644
  }
  
  sp<CameraClient> CameraClient::getClientFromCookie(void* user) {
-@@ -877,6 +909,11 @@ void CameraClient::notifyCallback(int32_t msgType, int32_t ext1,
+@@ -855,6 +881,11 @@ void CameraClient::notifyCallback(int32_t msgType, int32_t ext1,
      if (!client->lockIfMessageWanted(msgType)) return;
  
      switch (msgType) {
@@ -2038,7 +1968,7 @@ index a5aa474..f26f4c4 100644
          case CAMERA_MSG_SHUTTER:
              // ext1 is the dimension of the yuv picture.
              client->handleShutter();
-@@ -901,6 +938,11 @@ void CameraClient::dataCallback(int32_t msgType,
+@@ -879,6 +910,11 @@ void CameraClient::dataCallback(int32_t msgType,
          return;
      }
  
@@ -2050,10 +1980,11 @@ index a5aa474..f26f4c4 100644
      switch (msgType & ~CAMERA_MSG_PREVIEW_METADATA) {
          case CAMERA_MSG_PREVIEW_FRAME:
              client->handlePreviewData(msgType, dataPtr, metadata);
-@@ -1222,4 +1264,302 @@ status_t CameraClient::setVideoTarget(const sp<IGraphicBufferProducer>& bufferPr
-     return INVALID_OPERATION;
+@@ -1201,3 +1237,281 @@ status_t CameraClient::setVideoTarget(const sp<IGraphicBufferProducer>& bufferPr
  }
  
+ }; // namespace android
++
 +#ifdef MTK_HARDWARE
 +/******************************************************************************
 + *
@@ -2114,8 +2045,6 @@ index a5aa474..f26f4c4 100644
 +        return;
 +    }
 +
-+    //void*   const pvExtParam   = MtkExtDataHelper.getExtParamBase();
-+    //size_t  const ExtParamSize = MtkExtDataHelper.getExtParamSize();
 +    switch  (MtkExtDataHelper.getExtMsgType())
 +    {
 +        case MTK_CAMERA_MSG_EXT_DATA_AF:
@@ -2161,8 +2090,6 @@ index a5aa474..f26f4c4 100644
 + ******************************************************************************/
 +void CameraClient::handleMtkExtShutter(int32_t /*ext1*/, int32_t ext2)
 +{
-+    //ALOGD("[%s] (ext2, mPlayShutterSound)=(%d, %d) \r\n", __FUNCTION__, ext2, mPlayShutterSound);
-+
 +    if (mPlayShutterSound && (ext2 == 1)) {
 +        sCameraService->playSound(CameraService::SOUND_SHUTTER);
 +    }
@@ -2175,10 +2102,6 @@ index a5aa474..f26f4c4 100644
 +        c->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
 +        if (!lockIfMessageWanted(CAMERA_MSG_SHUTTER)) return;
 +    }
-+    //disableMsgType(CAMERA_MSG_SHUTTER);
-+#if 0
-+    mLock.unlock();
-+#endif
 +}
 +
 +/******************************************************************************
@@ -2189,7 +2112,6 @@ index a5aa474..f26f4c4 100644
 +{
 +    handleShutter();
 +    if  (0 < ext2) {
-+        //  not the last one burst shutter.
 +        enableMsgType(CAMERA_MSG_SHUTTER);
 +        ALOGD("[handleMtkExtBurstShutter] count-down burst shutter number:%d - enableMsgType(CAMERA_MSG_SHUTTER) \r\n", ext2);
 +    }
@@ -2223,7 +2145,6 @@ index a5aa474..f26f4c4 100644
 +    //
 +    //
 +    if  (0 < uCountdownIndex) {
-+        //  not the last one burst shut.
 +        ALOGD("[%s] count-down burst shut number:%d/%d - (size, offset)=(%zu, %zd) \r\n", __FUNCTION__, uCountdownIndex, uTotalShutCount, imageSize, imageOffset);
 +    }
 +    else {
@@ -2245,10 +2166,6 @@ index a5aa474..f26f4c4 100644
 +*******************************************************************************/
 +void CameraClient::handleMtkExtContinuousShutter(int32_t /*ext1*/, int32_t ext2)
 +{
-+    //if (mPlayShutterSound) {
-+    //    sCameraService->playSound(CameraService::SOUND_SHUTTER);
-+    //}
-+
 +    sp<hardware::ICameraClient> c = mRemoteCallback;
 +    if (c != 0) {
 +#if 0
@@ -2258,12 +2175,6 @@ index a5aa474..f26f4c4 100644
 +        if (!lockIfMessageWanted(CAMERA_MSG_SHUTTER)) return;
 +    }
 +
-+    //disableMsgType(CAMERA_MSG_SHUTTER);
-+#if 0
-+    mLock.unlock();
-+#endif
-+
-+    //enableMsgType(CAMERA_MSG_SHUTTER);
 +    ALOGD("[handleMtkExtContinuousShutter] current continuous shutter number:%d \n", ext2);
 +}
 +
@@ -2351,10 +2262,8 @@ index a5aa474..f26f4c4 100644
 +    handleMtkGenericData(CAMERA_MSG_COMPRESSED_IMAGE, image, NULL);
 +}
 +#endif
-+
- }; // namespace android
 diff --git a/services/camera/libcameraservice/api1/CameraClient.h b/services/camera/libcameraservice/api1/CameraClient.h
-index c4ed876..9fcc495 100644
+index 16627cc..1bbd4df 100644
 --- a/services/camera/libcameraservice/api1/CameraClient.h
 +++ b/services/camera/libcameraservice/api1/CameraClient.h
 @@ -19,6 +19,10 @@
@@ -2368,7 +2277,7 @@ index c4ed876..9fcc495 100644
  namespace android {
  
  class MemoryHeapBase;
-@@ -180,6 +184,29 @@ private:
+@@ -179,6 +183,29 @@ private:
      // is found to be disabled. It returns true if mLock is grabbed.
      bool                    lockIfMessageWanted(int32_t msgType);
  
@@ -2398,6 +2307,3 @@ index c4ed876..9fcc495 100644
      bool                 mLongshotEnabled;
      int                  mBurstCnt;
  };
--- 
-2.25.1
-
