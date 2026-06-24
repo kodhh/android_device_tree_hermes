@@ -46,6 +46,7 @@ TARGET_KERNEL_CONFIG := hermes_defconfig
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
+MTK_PLATFORM := mt6795
 TARGET_KERNEL_CLANG_COMPILE := false
 KERNEL_TOOLCHAIN := \$(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
 KERNEL_TOOLCHAIN_ARM32 := \$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
