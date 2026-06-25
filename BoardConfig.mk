@@ -157,9 +157,10 @@ TARGET_FLATTEN_APEX := true
 
 # Treble / VNDK (required for Android 10+)
 TARGET_COPY_OUT_VENDOR := vendor
-BOARD_VNDK_VERSION := current
-PRODUCT_EXTRA_VNDK_VERSIONS := 28
-PRODUCT_TARGET_VNDK_VERSION := 28
+# Disabled VNDK due to MTK legacy HAL incompatibility with strict isolation
+#BOARD_VNDK_VERSION := current
+#PRODUCT_EXTRA_VNDK_VERSIONS := 28
+#PRODUCT_TARGET_VNDK_VERSION := 28
 BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 
 # Vendor
