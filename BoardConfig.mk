@@ -54,12 +54,12 @@ TARGET_KERNEL_CONFIG := hermes_defconfig
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
-MTK_PLATFORM := mt6795
 TARGET_KERNEL_CLANG_COMPILE := false
-KERNEL_TOOLCHAIN := \$(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
-KERNEL_TOOLCHAIN_ARM32 := \$(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
+KERNEL_TOOLCHAIN := $(ANDROID_TOP)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
+KERNEL_TOOLCHAIN_ARM32 := $(ANDROID_TOP)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
 TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
 TARGET_KERNEL_CROSS_COMPILE_ARM32_PREFIX := arm-linux-androideabi-
+TARGET_KERNEL_ADDITIONAL_FLAGS := MTK_PLATFORM=mt6795
 
 # Partitons
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 12737560576
