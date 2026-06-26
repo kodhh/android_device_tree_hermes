@@ -207,5 +207,6 @@ type tfa9890_device, dev_type;
 type voldblk_device, dev_type;
 
 type bootdevice_block_device, dev_type;
+type mtd_device, dev_type;
 type gps_device, dev_type;
 type urandom_device, dev_type, mlstrustedobject;

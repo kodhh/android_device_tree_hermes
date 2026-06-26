@@ -69,3 +69,43 @@ index 55e8130..3dd83a1 100644
                  if (mCodec->mExecutingState->active()) {
                      mCodec->mExecutingState->submitOutputBuffers();
                  }
+@@ -8236,6 +8256,15 @@ bool ACodec::OutputPortSettingsChangedState::onOMXEvent(
+             return false;
+         }
+ 
++#ifdef USE_LEGACY_RESCALING
++        case OMX_EventPortSettingsChanged:
++            // Exynos OMX wants to share its' output crop
++            // For some reason trying to handle this here doesn't do anything
++            // We'll do it right before transitioning to ExecutingState
++            return true;
++        break;
++#endif
++
+         default:
+             return BaseState::onOMXEvent(event, data1, data2);
+     }
+@@ -8535,4 +8554,23 @@ status_t ACodec::getOMXChannelMapping(size_t numChannels, OMX_AUDIO_CHANNELTYPE
+     return OK;
+ }
+ 
++#ifdef USE_LEGACY_RESCALING
++void ACodec::addKeyFormatChangesToRenderBufferNotification(sp<AMessage> &notify) {
++    AString mime;
++    CHECK(mOutputFormat->findString("mime", &mime));
++    if (mime == MEDIA_MIMETYPE_VIDEO_RAW && mNativeWindow != NULL) {
++        // notify renderer of the crop change and dataspace change
++        // NOTE: native window uses extended right-bottom coordinate
++        int32_t left, top, right, bottom;
++        if (mOutputFormat->findRect("crop", &left, &top, &right, &bottom)) {
++            notify->setRect("crop", left, top, right + 1, bottom + 1);
++        }
++        int32_t dataSpace;
++        if (mOutputFormat->findInt32("android._dataspace", &dataSpace)) {
++            notify->setInt32("dataspace", dataSpace);
++        }
++    }
++}
++#endif
++
+ }  // namespace android
