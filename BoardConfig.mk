@@ -160,7 +160,7 @@ DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 
 # APEX (required for Android 10+)
-TARGET_FLATTEN_APEX := true
+OVERRIDE_TARGET_FLATTEN_APEX := true
 
 # Treble / VNDK (required for Android 10+)
 TARGET_COPY_OUT_VENDOR := vendor
