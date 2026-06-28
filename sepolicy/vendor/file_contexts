@@ -1,0 +1,26 @@
+# Audio
+/data/vendor/cirrus(/.*)?	u:object_r:mtk_audiohal_data_file:s0
+/mnt/vendor/persist/audio(/.*)? u:object_r:mtk_audiohal_data_file:s0
+
+# FingerPrint
+/mnt/vendor/persist/goodix(/.*)? u:object_r:fp_data_vendor_file:s0
+/mnt/vendor/persist/fpc(/.*)?    u:object_r:fp_data_vendor_file:s0
+/data/vendor/fpdump(/.*)?        u:object_r:fp_data_vendor_file:s0
+/data/vendor/goodix(/.*)?        u:object_r:fp_data_vendor_file:s0
+/data/vendor/fpc(/.*)?           u:object_r:fp_data_vendor_file:s0
+/data/gf_data(/.*)?              u:object_r:fp_data_vendor_file:s0
+
+# FPS Info
+/sys/module/primary_display/parameters/display_framerate_main      u:object_r:sysfs_fpsinfo:s0
+
+# Light
+/vendor/bin/hw/android\.hardware\.light-service\.mt6768      u:object_r:hal_light_default_exec:s0
+
+# Mi Thermald
+/vendor/bin/mi_thermald       u:object_r:mi_thermald_exec:s0
+
+# NFC
+/dev/nq-nci  u:object_r:nfc_device:s0
+
+# WiFi
+/(vendor|system/vendor)/bin/hw/android\.hardware\.wifi@[0-9]\.[0-9]-service-lazy\.mt6768 u:object_r:hal_wifi_default_exec:s0
