@@ -1,2 +1,0 @@
-dontaudit untrusted_app ashmem_device:chr_file open;
-dontaudit untrusted_app vendor_mtk_gpu_prop:file read;

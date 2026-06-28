@@ -6,5 +6,7 @@ type sysfs_battery_supply, fs_type, sysfs_type;
 
 type fp_data_vendor_file, file_type, data_file_type;
 
+type sysfs_therm, fs_type, sysfs_type;
+
 type proc_vm_dirty, fs_type, proc_type;
 type proc_sched_stune, fs_type, proc_type;
