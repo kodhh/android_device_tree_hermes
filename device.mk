@@ -130,7 +130,6 @@ PRODUCT_COPY_FILES += \
 # dalvik GC tag
 PRODUCT_TAGS += dalvik.gc.type-precise
 
-# Init scripts & fstab (SAR)
+# Fstab
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/fstab.mt6795:root/fstab.mt6795 \
-    $(LOCAL_PATH)/rootdir/etc/init.hermes.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/init.hermes.rc
+    $(LOCAL_PATH)/rootdir/etc/fstab.mt6795:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.mt6795
