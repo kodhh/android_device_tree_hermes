@@ -1,3 +1,6 @@
+type mtk_hal_camera, domain;
+type mtk_hal_camera_exec, exec_type, vendor_file_type, file_type;
+
 allow mtk_hal_camera mtk_hal_pq_hwservice:hwservice_manager find;
 
 set_prop(mtk_hal_camera, vendor_mi_camera_prop)
