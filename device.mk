@@ -36,6 +36,10 @@ PRODUCT_PACKAGES += \
     init.spectrum \
     privapp-permissions-com.hq.spectrumsuper
 
+# RemovePackages
+PRODUCT_PACKAGES += \
+    RemovePackages
+
 # Shim symbols
 PRODUCT_PACKAGES += \
     mtkc \
