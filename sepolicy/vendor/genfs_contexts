@@ -1,0 +1,2 @@
+# sysfs livedisplay (referenced by lineage sepolicy)
+genfscon sysfs /devices/platform/mtk_disp_mgr.0/rgb u:object_r:sysfs_livedisplay_tuneable:s0
