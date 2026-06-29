@@ -138,13 +138,11 @@ TARGET_IGNORES_FTP_PPTP_CONNTRACK_FAILURE := true
 
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.$(TARGET_BOARD_PLATFORM)
-TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
-TARGET_USES_MKE2FS := true
 
 # Sepolicy
-BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(DEVICE_PATH)/sepolicy/private
-BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
-BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy
+include device/mediatek/sepolicy/sepolicy.mk
+BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private
+BOARD_PLAT_PUBLIC_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/public
 SELINUX_IGNORE_NEVERALLOWS := true
 
 # Disable dex pre-opt
