@@ -1,67 +1,8 @@
-diff --git a/services/camera/libcameraservice/api1/Camera2Client.h b/services/camera/libcameraservice/api1/Camera2Client.h
-index a7dd3e5..01e3757 100644
---- a/services/camera/libcameraservice/api1/Camera2Client.h
-+++ b/services/camera/libcameraservice/api1/Camera2Client.h
-@@ -22,6 +22,14 @@
- #include "api1/client2/Parameters.h"
- #include "api1/client2/FrameProcessor.h"
- 
-+#ifndef MTK_HARDWARE
-+#define MTK_HARDWARE
-+#endif
-+
-+#ifdef MTK_HARDWARE
-+#include <camera/MtkCamera.h>
-+#include <camera/MtkCameraParameters.h>
-+#endif
- 
- namespace android {
- 
-@@ -192,6 +200,29 @@
-     virtual void notifyAutoFocus(uint8_t newState, int triggerId);
-     virtual void notifyAutoExposure(uint8_t newState, int triggerId);
- 
-+#ifdef MTK_HARDWARE
-+    // MTK message type management
-+    bool msgTypeEnabled(int32_t msgType);
-+    void enableMsgType(int32_t msgType);
-+    void disableMsgType(int32_t msgType);
-+
-+    // MTK extension notification/data handlers
-+    void handleMtkExtNotify(int32_t ext1, int32_t ext2);
-+    void handleMtkExtData(const sp<IMemory>& dataPtr,
-+                          camera_frame_metadata_t *metadata);
-+    void handleMtkGenericData(int32_t msgType,
-+                              const sp<IMemory>& dataPtr,
-+                              camera_frame_metadata_t *metadata);
-+    void handleMtkExtShutter(int32_t ext1, int32_t ext2);
-+    void playRecordingSound();
-+
-+    // Additional MTK extension handlers (internal)
-+    void handleMtkExtCaptureDone(int32_t ext1, int32_t ext2);
-+    void handleMtkExtBurstShutter(int32_t ext1, int32_t ext2);
-+    void handleMtkExtContinuousShutter(int32_t ext1, int32_t ext2);
-+    void handleMtkExtContinuousEnd(int32_t ext1, int32_t ext2);
-+#endif
-+
-     virtual void notifyShutter(const CaptureResultExtras& resultExtras,
-                                nsecs_t timestamp);
- 
-@@ -326,6 +358,9 @@
-     StatusT waitUntilRequestIdApplied(int32_t requestId, nsecs_t timeout);
-     StatusT waitUntilCurrentRequestIdLocked();
- 
-+    // Message types enabled for the client
-+    int32_t mMsgEnabled;
-+
- };
- 
- }; // namespace android
 diff --git a/services/camera/libcameraservice/api1/Camera2Client.cpp b/services/camera/libcameraservice/api1/Camera2Client.cpp
-index 6196cf8..78082dc 100644
+index 8c72bd7..ea04039 100644
 --- a/services/camera/libcameraservice/api1/Camera2Client.cpp
 +++ b/services/camera/libcameraservice/api1/Camera2Client.cpp
-@@ -30,6 +30,16 @@
+@@ -36,6 +36,16 @@
  #include "utils/CameraThreadState.h"
  #include "utils/CameraServiceProxyWrapper.h"
  
@@ -78,7 +19,7 @@ index 6196cf8..78082dc 100644
  #define ALOG1(...) ALOGD_IF(gLogLevel >= 1, __VA_ARGS__);
  #define ALOG2(...) ALOGD_IF(gLogLevel >= 2, __VA_ARGS__);
  
-@@ -47,7 +55,8 @@
+@@ -63,7 +73,8 @@ Camera2Client::Camera2Client(const sp<CameraService>& cameraService,
          Camera2ClientBase(cameraService, cameraClient, clientPackageName, clientFeatureId,
                  cameraDeviceId, api1CameraId, cameraFacing, sensorOrientation,
                  clientPid, clientUid, servicePid, overrideForPerfClass, /*legacyClient*/ true),
@@ -88,7 +29,7 @@ index 6196cf8..78082dc 100644
  {
      ATRACE_CALL();
  
-@@ -1697,9 +1706,220 @@
+@@ -1695,10 +1706,221 @@ status_t Camera2Client::commandEnableShutterSoundL(bool enable) {
  }
  
  status_t Camera2Client::commandPlayRecordingSoundL() {
@@ -310,3 +251,67 @@ index 6196cf8..78082dc 100644
  status_t Camera2Client::commandStartFaceDetectionL(int /*type*/) {
      ALOGV("%s: Camera %d: Starting face detection",
            __FUNCTION__, mCameraId);
+diff --git a/services/camera/libcameraservice/api1/Camera2Client.h b/services/camera/libcameraservice/api1/Camera2Client.h
+index 64ab8ff..0cd4c7b 100644
+--- a/services/camera/libcameraservice/api1/Camera2Client.h
++++ b/services/camera/libcameraservice/api1/Camera2Client.h
+@@ -22,6 +22,16 @@
+ #include "common/Camera2ClientBase.h"
+ #include "api1/client2/Parameters.h"
+ #include "api1/client2/FrameProcessor.h"
++
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
++#ifdef MTK_HARDWARE
++#include <camera/MtkCamera.h>
++#include <camera/MtkCameraParameters.h>
++#endif
++
+ //#include "api1/client2/StreamingProcessor.h"
+ //#include "api1/client2/JpegProcessor.h"
+ //#include "api1/client2/ZslProcessor.h"
+@@ -122,6 +132,29 @@ public:
+ 
+     virtual void notifyAutoFocus(uint8_t newState, int triggerId);
+     virtual void notifyAutoExposure(uint8_t newState, int triggerId);
++
++#ifdef MTK_HARDWARE
++    // MTK message type management
++    bool msgTypeEnabled(int32_t msgType);
++    void enableMsgType(int32_t msgType);
++    void disableMsgType(int32_t msgType);
++
++    // MTK extension notification/data handlers
++    void handleMtkExtNotify(int32_t ext1, int32_t ext2);
++    void handleMtkExtData(const sp<IMemory>& dataPtr,
++                          camera_frame_metadata_t *metadata);
++    void handleMtkGenericData(int32_t msgType,
++                              const sp<IMemory>& dataPtr,
++                              camera_frame_metadata_t *metadata);
++    void handleMtkExtShutter(int32_t ext1, int32_t ext2);
++    void playRecordingSound();
++
++    void handleMtkExtCaptureDone(int32_t ext1, int32_t ext2);
++    void handleMtkExtBurstShutter(int32_t ext1, int32_t ext2);
++    void handleMtkExtContinuousShutter(int32_t ext1, int32_t ext2);
++    void handleMtkExtContinuousEnd(int32_t ext1, int32_t ext2);
++#endif
++
+     virtual void notifyShutter(const CaptureResultExtras& resultExtras,
+                                nsecs_t timestamp);
+ 
+@@ -245,8 +278,11 @@ private:
+     int32_t mLatestFailedRequestId = -1;
+     status_t waitUntilRequestIdApplied(int32_t requestId, nsecs_t timeout);
+     status_t waitUntilCurrentRequestIdLocked();
+-};
+ 
++    // Message types enabled for the client
++    int32_t mMsgEnabled;
++
++};
+ }; // namespace android
+ 
+ #endif
