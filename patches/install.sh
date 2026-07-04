@@ -18,43 +18,15 @@ for dir in $dirs ; do
 	cd $rootdirectory/$dir
 	echo -e "\n${RED}Applying ${NC}$dir${NC}\n"
 
-	for patch in $(ls "$SCRIPT_DIR/$dir/"*.patch 2>/dev/null | sort); do
+	for patch in $SCRIPT_DIR/$dir/*.patch; do
+		[ -f "$patch" ] || continue
 		name="$(basename $patch)"
 
-		# Try git apply first (sequential, builds on previous patches)
-		if git apply -v "$patch" 2>/dev/null; then
+		if patch -p1 -r /dev/null < "$patch" 2>/dev/null; then
 			echo "  $name"
 		else
-			# git apply failed → checkout files, then patch -p1
-			echo "  $name (checkout + patch)"
-
-			# Delete files the patch creates (--- /dev/null)
-			old=""
-			while IFS= read -r line; do
-				case "$line" in
-					'--- /dev/null')  old="/dev/null"  ;;
-					'+++ b/'*)
-						[ "$old" = "/dev/null" ] && rm -f "${line#+++ b/}"
-						old=""
-						;;
-				esac
-			done < "$patch"
-
-			# Checkout modified files to clean state
-			while IFS= read -r line; do
-				case "$line" in
-					'--- a/'*)
-						f="${line#--- a/}"
-						[ -f "$f" ] && git checkout -- "$f" 2>/dev/null
-						;;
-				esac
-			done < "$patch"
-
-			patch -p1 -r - < "$patch"
-			if [ $? -ne 0 ]; then
-				echo -e "${RED}FAILED:${NC} $patch"
-				exit 1
-			fi
+			echo -e "${RED}FAILED:${NC} $patch"
+			exit 1
 		fi
 	done
 done

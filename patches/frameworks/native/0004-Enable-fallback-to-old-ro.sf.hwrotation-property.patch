@@ -4,28 +4,27 @@ Date: Wed, 27 Jan 2021 17:57:43 +0100
 Subject: [PATCH] Enable fallback to old ro.sf.hwrotation property
 
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
-index 21e9e8e..0b09d09 100644
 --- a/services/surfaceflinger/SurfaceFlinger.cpp
 +++ b/services/surfaceflinger/SurfaceFlinger.cpp
-@@ -339,6 +339,21 @@ SurfaceFlinger::SurfaceFlinger(Factory& factory) : SurfaceFlinger(factory, SkipI
-             SurfaceFlinger::primaryDisplayOrientation = DisplayState::eOrientationDefault;
-             break;
+@@ -447,6 +447,21 @@ SurfaceFlinger::SurfaceFlinger(Factory& factory) : SurfaceFlinger(factory, SkipI
      }
-+    if (SurfaceFlinger::primaryDisplayOrientation == DisplayState::eOrientationDefault) {
+     ALOGV("Internal Display Orientation: %s", toCString(internalDisplayOrientation));
+
++    if (internalDisplayOrientation == ui::ROTATION_0) {
 +        int sfRotation = property_get_int32("ro.sf.hwrotation", -1);
 +        switch(sfRotation) {
 +            case 90:
-+                SurfaceFlinger::primaryDisplayOrientation = DisplayState::eOrientation90;
++                internalDisplayOrientation = ui::ROTATION_90;
 +                break;
 +            case 180:
-+                SurfaceFlinger::primaryDisplayOrientation = DisplayState::eOrientation180;
++                internalDisplayOrientation = ui::ROTATION_180;
 +                break;
 +            case 270:
-+                SurfaceFlinger::primaryDisplayOrientation = DisplayState::eOrientation270;
++                internalDisplayOrientation = ui::ROTATION_270;
 +                break;
 +        }
 +    }
 +
-     ALOGV("Primary Display Orientation is set to %2d.", SurfaceFlinger::primaryDisplayOrientation);
- 
      mInternalDisplayPrimaries = sysprop::getDisplayNativePrimaries();
+     if (!mInternalDisplayPrimaries) {
+         ALOGW("Internal display primitives are not set");

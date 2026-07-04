@@ -899,18 +899,10 @@ index 55e8130..3053eac 100644
          }
          // find best legacy non-standard format
 diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
-index 7eab230..fcdc4d0 100644
+index d42e172..3aadb8d 100644
 --- a/media/libstagefright/Android.bp
 +++ b/media/libstagefright/Android.bp
-@@ -203,6 +203,7 @@ cc_library {
-         "android.hidl.allocator@1.0",
-         "android.hardware.cas.native@1.0",
-         "android.hardware.media.omx@1.0",
-+        "libdpframework",
-     ],
- 
-     static_libs: [
-@@ -233,6 +234,7 @@ cc_library {
+@@ -233,6 +233,7 @@ cc_library_shared {
  
      export_include_dirs: [
          "include",
@@ -918,6 +910,14 @@ index 7eab230..fcdc4d0 100644
      ],
  
      cflags: [
+@@ -343,6 +344,7 @@ cc_library {
+         "android.hardware.media.omx@1.0",
+         "framework-permission-aidl-cpp",
+         "libaudioclient_aidl_conversion",
++        "libdpframework",
+     ],
+ 
+     static_libs: [
 diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
 index 3bca728..1c6805f 100644
 --- a/media/libstagefright/CameraSource.cpp

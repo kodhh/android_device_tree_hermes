@@ -1,0 +1,312 @@
+diff --git a/services/camera/libcameraservice/api1/Camera2Client.h b/services/camera/libcameraservice/api1/Camera2Client.h
+index a7dd3e5..01e3757 100644
+--- a/services/camera/libcameraservice/api1/Camera2Client.h
++++ b/services/camera/libcameraservice/api1/Camera2Client.h
+@@ -22,6 +22,14 @@
+ #include "api1/client2/Parameters.h"
+ #include "api1/client2/FrameProcessor.h"
+ 
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
++#ifdef MTK_HARDWARE
++#include <camera/MtkCamera.h>
++#include <camera/MtkCameraParameters.h>
++#endif
+ 
+ namespace android {
+ 
+@@ -192,6 +200,29 @@
+     virtual void notifyAutoFocus(uint8_t newState, int triggerId);
+     virtual void notifyAutoExposure(uint8_t newState, int triggerId);
+ 
++#ifdef MTK_HARDWARE
++    // MTK message type management
++    bool msgTypeEnabled(int32_t msgType);
++    void enableMsgType(int32_t msgType);
++    void disableMsgType(int32_t msgType);
++
++    // MTK extension notification/data handlers
++    void handleMtkExtNotify(int32_t ext1, int32_t ext2);
++    void handleMtkExtData(const sp<IMemory>& dataPtr,
++                          camera_frame_metadata_t *metadata);
++    void handleMtkGenericData(int32_t msgType,
++                              const sp<IMemory>& dataPtr,
++                              camera_frame_metadata_t *metadata);
++    void handleMtkExtShutter(int32_t ext1, int32_t ext2);
++    void playRecordingSound();
++
++    // Additional MTK extension handlers (internal)
++    void handleMtkExtCaptureDone(int32_t ext1, int32_t ext2);
++    void handleMtkExtBurstShutter(int32_t ext1, int32_t ext2);
++    void handleMtkExtContinuousShutter(int32_t ext1, int32_t ext2);
++    void handleMtkExtContinuousEnd(int32_t ext1, int32_t ext2);
++#endif
++
+     virtual void notifyShutter(const CaptureResultExtras& resultExtras,
+                                nsecs_t timestamp);
+ 
+@@ -326,6 +358,9 @@
+     StatusT waitUntilRequestIdApplied(int32_t requestId, nsecs_t timeout);
+     StatusT waitUntilCurrentRequestIdLocked();
+ 
++    // Message types enabled for the client
++    int32_t mMsgEnabled;
++
+ };
+ 
+ }; // namespace android
+diff --git a/services/camera/libcameraservice/api1/Camera2Client.cpp b/services/camera/libcameraservice/api1/Camera2Client.cpp
+index 6196cf8..78082dc 100644
+--- a/services/camera/libcameraservice/api1/Camera2Client.cpp
++++ b/services/camera/libcameraservice/api1/Camera2Client.cpp
+@@ -30,6 +30,16 @@
+ #include "utils/CameraThreadState.h"
+ #include "utils/CameraServiceProxyWrapper.h"
+ 
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
++#ifdef MTK_HARDWARE
++#include <camera/MtkCamera.h>
++#include <binder/MemoryBase.h>
++#include <binder/IMemory.h>
++#endif
++
+ #define ALOG1(...) ALOGD_IF(gLogLevel >= 1, __VA_ARGS__);
+ #define ALOG2(...) ALOGD_IF(gLogLevel >= 2, __VA_ARGS__);
+ 
+@@ -47,7 +55,8 @@
+         Camera2ClientBase(cameraService, cameraClient, clientPackageName, clientFeatureId,
+                 cameraDeviceId, api1CameraId, cameraFacing, sensorOrientation,
+                 clientPid, clientUid, servicePid, overrideForPerfClass, /*legacyClient*/ true),
+-        mParameters(api1CameraId, cameraFacing)
++        mParameters(api1CameraId, cameraFacing),
++        mMsgEnabled(0)
+ {
+     ATRACE_CALL();
+ 
+@@ -1697,9 +1706,220 @@
+ }
+ 
+ status_t Camera2Client::commandPlayRecordingSoundL() {
++#ifdef MTK_HARDWARE
++    playRecordingSound();
++#else
+     sCameraService->playSound(CameraService::SOUND_RECORDING_START);
++#endif
+     return OK;
+ }
+ 
++#ifdef MTK_HARDWARE
++/* --- MTK Extension Handlers --- */
++
++bool Camera2Client::msgTypeEnabled(int32_t msgType) {
++    return (mMsgEnabled & msgType) != 0;
++}
++
++void Camera2Client::enableMsgType(int32_t msgType) {
++    mMsgEnabled |= msgType;
++}
++
++void Camera2Client::disableMsgType(int32_t msgType) {
++    mMsgEnabled &= ~msgType;
++}
++
++void Camera2Client::playRecordingSound()
++{
++    CameraParameters params(getParameters().unsafeAccess().paramsFlattened());
++    int value = 0;
++    value = params.getInt("rec-mute-ogg");
++    if (value != 1) {
++        sCameraService->playSound(CameraService::SOUND_RECORDING_START);
++    }
++}
++
++void Camera2Client::handleMtkExtNotify(int32_t ext1, int32_t ext2)
++{
++    int32_t const extMsgType = ext1;
++    switch (extMsgType)
++    {
++        case MTK_CAMERA_MSG_EXT_NOTIFY_CAPTURE_DONE:
++            handleMtkExtCaptureDone(ext1, ext2);
++            break;
++        case MTK_CAMERA_MSG_EXT_NOTIFY_SHUTTER:
++            handleMtkExtShutter(ext1, ext2);
++            break;
++        case MTK_CAMERA_MSG_EXT_NOTIFY_BURST_SHUTTER:
++            handleMtkExtBurstShutter(ext1, ext2);
++            break;
++        case MTK_CAMERA_MSG_EXT_NOTIFY_CONTINUOUS_SHUTTER:
++            handleMtkExtContinuousShutter(ext1, ext2);
++            break;
++        case MTK_CAMERA_MSG_EXT_NOTIFY_CONTINUOUS_END:
++            handleMtkExtContinuousEnd(ext1, ext2);
++            break;
++        default:
++        {
++            SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++            if (l.mRemoteCallback != 0) {
++                l.mRemoteCallback->notifyCallback(MTK_CAMERA_MSG_EXT_NOTIFY, ext1, ext2);
++            }
++            break;
++        }
++    }
++}
++
++void Camera2Client::handleMtkExtData(const sp<IMemory>& dataPtr,
++                                      camera_frame_metadata_t *metadata)
++{
++    MtkCamMsgExtDataHelper MtkExtDataHelper;
++
++    if (!MtkExtDataHelper.init(dataPtr)) {
++        ALOGE("[handleMtkExtData] MtkCamMsgExtDataHelper::init fail - dataPtr(%p), this(%p)",
++              dataPtr.get(), this);
++        return;
++    }
++
++    switch (MtkExtDataHelper.getExtMsgType())
++    {
++        case MTK_CAMERA_MSG_EXT_DATA_AF:
++            handleMtkGenericData(CAMERA_MSG_FOCUS, NULL, NULL);
++            break;
++        case MTK_CAMERA_MSG_EXT_DATA_COMPRESSED_IMAGE:
++        {
++            uint_t const* const pExtParam = (uint_t const*)MtkExtDataHelper.getExtParamBase();
++            uint_t const uShutIndex = pExtParam[0];
++            size_t const imageSize = MtkExtDataHelper.getExtParamSize() - sizeof(uint_t) * 1;
++            ssize_t const imageOffset = MtkExtDataHelper.getExtParamOffset() + sizeof(uint_t) * 1;
++            sp<MemoryBase> image = new MemoryBase(MtkExtDataHelper.getHeap(), imageOffset, imageSize);
++            MtkExtDataHelper.uninit();
++            if (image == 0) {
++                ALOGE("[handleMtkExtData] fail to new MemoryBase");
++                return;
++            }
++            handleMtkGenericData(CAMERA_MSG_COMPRESSED_IMAGE, image, NULL);
++            return;
++        }
++        case MTK_CAMERA_MSG_EXT_DATA_BURST_SHOT:
++        {
++            uint_t const* const pExtParam = (uint_t const*)MtkExtDataHelper.getExtParamBase();
++            uint_t const uTotalShutCount = pExtParam[0];
++            uint_t const uCountdownIndex = pExtParam[1];
++            size_t const imageSize = MtkExtDataHelper.getExtParamSize() - sizeof(uint_t) * 2;
++            ssize_t const imageOffset = MtkExtDataHelper.getExtParamOffset() + sizeof(uint_t) * 2;
++            sp<MemoryBase> image = new MemoryBase(MtkExtDataHelper.getHeap(), imageOffset, imageSize);
++            MtkExtDataHelper.uninit();
++            if (image == 0) {
++                ALOGE("[handleMtkExtData] fail to new MemoryBase");
++                return;
++            }
++            if (uCountdownIndex == 0) {
++                disableMsgType(CAMERA_MSG_COMPRESSED_IMAGE);
++            }
++            handleMtkGenericData(CAMERA_MSG_COMPRESSED_IMAGE, image, NULL);
++            return;
++        }
++        case MTK_CAMERA_MSG_EXT_DATA_CONTINUOUS_SHOT:
++        {
++            uint_t const* const pExtParam = (uint_t const*)MtkExtDataHelper.getExtParamBase();
++            uint_t const uCurShutCount = pExtParam[0];
++            size_t const imageSize = MtkExtDataHelper.getExtParamSize() - sizeof(uint_t) * 1;
++            ssize_t const imageOffset = MtkExtDataHelper.getExtParamOffset() + sizeof(uint_t) * 1;
++            sp<MemoryBase> image = new MemoryBase(MtkExtDataHelper.getHeap(), imageOffset, imageSize);
++            MtkExtDataHelper.uninit();
++            if (image == 0) {
++                ALOGE("[handleMtkExtData] fail to new MemoryBase");
++                return;
++            }
++            handleMtkGenericData(CAMERA_MSG_COMPRESSED_IMAGE, image, NULL);
++            return;
++        }
++        default:
++        {
++            sp<hardware::ICameraClient> c;
++            {
++                SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++                c = l.mRemoteCallback;
++            }
++            if (c != 0) {
++                c->dataCallback(MTK_CAMERA_MSG_EXT_DATA, dataPtr, metadata);
++            }
++            MtkExtDataHelper.uninit();
++            return;
++        }
++    }
++    MtkExtDataHelper.uninit();
++}
++
++void Camera2Client::handleMtkGenericData(int32_t msgType,
++    const sp<IMemory>& dataPtr, camera_frame_metadata_t *metadata) {
++    SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++    if (l.mRemoteCallback != 0) {
++        l.mRemoteCallback->dataCallback(msgType, dataPtr, metadata);
++    }
++}
++
++void Camera2Client::handleMtkExtShutter(int32_t /*ext1*/, int32_t ext2)
++{
++    bool playShutterSound;
++    {
++        SharedParameters::Lock l(mParameters);
++        playShutterSound = l.mParameters.playShutterSound;
++    }
++
++    if (playShutterSound && (ext2 == 1)) {
++        sCameraService->playSound(CameraService::SOUND_SHUTTER);
++    }
++
++    SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++    if (l.mRemoteCallback != 0) {
++        l.mRemoteCallback->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
++    }
++}
++
++void Camera2Client::handleMtkExtBurstShutter(int32_t /*ext1*/, int32_t ext2)
++{
++    SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++    if (l.mRemoteCallback != 0) {
++        l.mRemoteCallback->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
++    }
++    if (ext2 > 0) {
++        enableMsgType(CAMERA_MSG_SHUTTER);
++        ALOGD("[handleMtkExtBurstShutter] count-down burst shutter number:%d", ext2);
++    } else {
++        ALOGD("[handleMtkExtBurstShutter] the last one burst shutter");
++    }
++}
++
++void Camera2Client::handleMtkExtContinuousShutter(int32_t /*ext1*/, int32_t ext2)
++{
++    SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++    if (l.mRemoteCallback != 0) {
++        l.mRemoteCallback->notifyCallback(CAMERA_MSG_SHUTTER, 0, 0);
++    }
++    ALOGD("[handleMtkExtContinuousShutter] current continuous shutter number:%d", ext2);
++}
++
++void Camera2Client::handleMtkExtContinuousEnd(int32_t ext1, int32_t ext2)
++{
++    disableMsgType(CAMERA_MSG_SHUTTER);
++    disableMsgType(CAMERA_MSG_COMPRESSED_IMAGE);
++
++    SharedCameraCallbacks::Lock l(mSharedCameraCallbacks);
++    if (l.mRemoteCallback != 0) {
++        l.mRemoteCallback->notifyCallback(MTK_CAMERA_MSG_EXT_NOTIFY, ext1, ext2);
++    }
++    ALOGD("[handleMtkExtContinuousEnd] total continuous shut number is %d", ext2);
++}
++
++void Camera2Client::handleMtkExtCaptureDone(int32_t /*ext1*/, int32_t /*ext2*/)
++{
++    ALOGD("[handleMtkExtCaptureDone] disable CAMERA_MSG_SHUTTER / CAMERA_MSG_COMPRESSED_IMAGE");
++    disableMsgType(CAMERA_MSG_SHUTTER);
++    disableMsgType(CAMERA_MSG_COMPRESSED_IMAGE);
++}
++#endif
++
+ status_t Camera2Client::commandStartFaceDetectionL(int /*type*/) {
+     ALOGV("%s: Camera %d: Starting face detection",
+           __FUNCTION__, mCameraId);
