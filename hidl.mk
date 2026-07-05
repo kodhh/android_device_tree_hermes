@@ -1,7 +1,7 @@
 # Power HAL
 PRODUCT_PACKAGES += \
-    android.hardware.power@1.0-impl \
-    android.hardware.power@1.0-service
+    android.hardware.power@1.3-impl \
+    android.hardware.power@1.3-service
 
 # Wifi
 PRODUCT_PACKAGES += \
@@ -31,7 +31,7 @@ PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator@2.0-impl \
     android.hardware.graphics.allocator@2.0-service \
     android.hardware.graphics.composer@2.1-impl \
-    android.hardware.graphics.mapper@2.0-impl
+    android.hardware.graphics.mapper@2.1-impl
 
 # RenderScript
 PRODUCT_PACKAGES += \
@@ -54,7 +54,7 @@ PRODUCT_PACKAGES += \
 
 # USB HAL
 PRODUCT_PACKAGES += \
-    android.hardware.usb@1.0-service.basic
+    android.hardware.usb@1.1-service.basic
 
 # Omx
 PRODUCT_PACKAGES += \
@@ -99,8 +99,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.drm@1.0-impl \
     android.hardware.drm@1.0-service \
-    android.hardware.drm@1.1-service.clearkey \
-    android.hardware.drm@1.1-service.widevine
+    android.hardware.drm@1.2-service.clearkey \
+    android.hardware.drm@1.2-service.widevine
 
 # Health HAL
 PRODUCT_PACKAGES += \
