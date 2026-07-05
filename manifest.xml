@@ -52,16 +52,6 @@
         <fqname>@2.4::ICameraProvider/legacy/1</fqname>
     </hal>
     <hal format="hidl">
-        <name>android.hardware.cas</name>
-        <transport>hwbinder</transport>
-        <version>1.0</version>
-        <interface>
-            <name>IMediaCasService</name>
-            <instance>default</instance>
-        </interface>
-        <fqname>@1.0::IMediaCasService/default</fqname>
-    </hal>
-    <hal format="hidl">
         <name>android.hardware.configstore</name>
         <transport>hwbinder</transport>
         <version>1.1</version>
@@ -70,16 +60,6 @@
             <instance>default</instance>
         </interface>
         <fqname>@1.1::ISurfaceFlingerConfigs/default</fqname>
-    </hal>
-    <hal format="hidl">
-        <name>android.hardware.contexthub</name>
-        <transport arch="32+64">passthrough</transport>
-        <version>1.0</version>
-        <interface>
-            <name>IContexthub</name>
-            <instance>default</instance>
-        </interface>
-        <fqname>@1.0::IContexthub/default</fqname>
     </hal>
     <hal format="hidl">
         <name>android.hardware.drm</name>
@@ -303,12 +283,12 @@
     <hal format="hidl">
         <name>android.hardware.wifi</name>
         <transport>hwbinder</transport>
-        <version>1.2</version>
+        <version>1.0</version>
         <interface>
             <name>IWifi</name>
             <instance>default</instance>
         </interface>
-        <fqname>@1.2::IWifi/default</fqname>
+        <fqname>@1.0::IWifi/default</fqname>
     </hal>
     <hal format="hidl">
         <name>android.hardware.wifi.hostapd</name>

@@ -5,7 +5,9 @@ PRODUCT_PACKAGES += \
 
 # Wifi
 PRODUCT_PACKAGES += \
-    android.hardware.wifi@1.0-service
+    android.hardware.wifi@1.0-service \
+    android.hardware.wifi.hostapd@1.0 \
+    android.hardware.wifi.supplicant@1.1
 
 # GPS HAL
 PRODUCT_PACKAGES += \
@@ -42,7 +44,9 @@ PRODUCT_PACKAGES += \
     android.hardware.memtrack@1.0-service
 
 # Camera HAL
-PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-impl-legacy
+PRODUCT_PACKAGES += \
+    android.hardware.camera.provider@2.4-impl \
+    android.hardware.camera.provider@2.4-legacy
 
 # Bluetooth HAL
 PRODUCT_PACKAGES += \

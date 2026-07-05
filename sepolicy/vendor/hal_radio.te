@@ -1,0 +1,4 @@
+# Radio HAL on MT6795 needs access to MTK RIL devices
+allow hal_radio ccci_device:chr_file rw_file_perms;
+allow hal_radio radio_device:chr_file rw_file_perms;
+allow hal_radio ttyMT_device:chr_file rw_file_perms;

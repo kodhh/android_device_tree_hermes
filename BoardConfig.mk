@@ -140,9 +140,10 @@ TARGET_IGNORES_FTP_PPTP_CONNTRACK_FAILURE := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.$(TARGET_BOARD_PLATFORM)
 
 # Sepolicy
-#include device/mediatek/sepolicy/sepolicy.mk
-#BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(DEVICE_PATH)/sepolicy/private
-#BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
+# Include common MediaTek sepolicy (clone erfanoabdi/android_device_mediatek_sepolicy to device/mediatek/sepolicy)
+include device/mediatek/sepolicy/sepolicy.mk
+BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(DEVICE_PATH)/sepolicy/private
+BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
 SELINUX_IGNORE_NEVERALLOWS := true
 
 # Disable dex pre-opt
