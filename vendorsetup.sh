@@ -17,6 +17,6 @@ if [ -d "$AARCH64_BIN" ]; then
 fi
 
 if [ -d "$ARM_BIN" ]; then
-  [ -f "$ARM_BIN/real-arm-linux-androidkernel-gcc" ] && ln -sf real-arm-linux-androidkernel-gcc "$ARM_BIN/real-mbt-bin-arm-linux-androidkernel-gcc"
-  [ -f "$ARM_BIN/real-arm-linux-androidkernel-g++" ] && ln -sf real-arm-linux-androidkernel-g++ "$ARM_BIN/real-mbt-bin-arm-linux-androidkernel-g++"
+  [ -f "$ARM_BIN/real-arm-linux-androideabi-gcc" ] && ln -sf real-arm-linux-androideabi-gcc "$ARM_BIN/real-mbt-bin-arm-linux-androideabi-gcc"
+  [ -f "$ARM_BIN/real-arm-linux-androideabi-g++" ] && ln -sf real-arm-linux-androideabi-g++ "$ARM_BIN/real-mbt-bin-arm-linux-androideabi-g++"
 fi
