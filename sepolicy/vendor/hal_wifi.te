@@ -1,3 +1,0 @@
-# WiFi HAL on MT6795 needs access to MTK WMT device
-allow hal_wifi wmtWifi_device:chr_file rw_file_perms;
-allow hal_wifi stpwmt_device:chr_file rw_file_perms;

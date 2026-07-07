@@ -1,0 +1,12 @@
+# Sensors HAL on MT6795 needs access to MTK sensor devices
+allow hal_sensors_default sensor_device:chr_file rw_file_perms;
+allow hal_sensors_default als_ps_device:chr_file rw_file_perms;
+allow hal_sensors_default gsensor_device:chr_file rw_file_perms;
+allow hal_sensors_default msensor_device:chr_file rw_file_perms;
+allow hal_sensors_default gyroscope_device:chr_file rw_file_perms;
+allow hal_sensors_default hwmsensor_device:chr_file rw_file_perms;
+allow hal_sensors_default barometer_device:chr_file rw_file_perms;
+allow hal_sensors_default humidity_device:chr_file rw_file_perms;
+allow hal_sensors_default m_acc_misc_device:chr_file rw_file_perms;
+allow hal_sensors_default m_mag_misc_device:chr_file rw_file_perms;
+allow hal_sensors_default m_gyro_misc_device:chr_file rw_file_perms;

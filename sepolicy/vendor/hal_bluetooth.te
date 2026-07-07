@@ -1,3 +1,0 @@
-# Bluetooth HAL on MT6795 needs access to MTK STP device
-allow hal_bluetooth stpbt_device:chr_file rw_file_perms;
-allow hal_bluetooth btif_device:chr_file rw_file_perms;
