@@ -31,9 +31,6 @@ TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := cortex-a53
 
-# system-as-root (required for Android 10+)
-BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
-
 # Kernel
 BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2
 ifneq ($(TARGET_BUILD_VARIANT),user)
