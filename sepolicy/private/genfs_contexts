@@ -1,2 +1,0 @@
-# GPU debugging interface (MTK GED)
-genfscon proc /ged u:object_r:proc_ged:s0
