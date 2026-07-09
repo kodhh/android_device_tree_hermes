@@ -157,9 +157,6 @@ endif
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 
-# Build old-style zip files (required for ota updater)
-BLOCK_BASED_OTA := false
-
 # APEX (required for Android 10+)
 OVERRIDE_TARGET_FLATTEN_APEX := true
 
@@ -167,6 +164,7 @@ OVERRIDE_TARGET_FLATTEN_APEX := true
 #BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 #PRODUCT_FULL_TREBLE_OVERRIDE := true
 #BOARD_VNDK_RUNTIME_DISABLE := true
+BOARD_USES_VENDORIMAGE := false
 TARGET_COPY_OUT_VENDOR := system/vendor
 #BOARD_VNDK_VERSION := current
 
