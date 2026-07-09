@@ -157,16 +157,18 @@ endif
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 
+# Build old-style zip files (required for ota updater)
+BLOCK_BASED_OTA := false
+
 # APEX (required for Android 10+)
 OVERRIDE_TARGET_FLATTEN_APEX := true
 
-# Treble / VNDK (required for Android 10+)
-TARGET_COPY_OUT_VENDOR := vendor
-# Disabled VNDK due to MTK legacy HAL incompatibility with strict isolation
+# Treble
+#BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
+#PRODUCT_FULL_TREBLE_OVERRIDE := true
+#BOARD_VNDK_RUNTIME_DISABLE := true
+TARGET_COPY_OUT_VENDOR := system/vendor
 #BOARD_VNDK_VERSION := current
-#PRODUCT_EXTRA_VNDK_VERSIONS := 28
-#PRODUCT_TARGET_VNDK_VERSION := 28
-BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 
 # Vendor
 VENDOR_SECURITY_PATCH := 2020-05-05
