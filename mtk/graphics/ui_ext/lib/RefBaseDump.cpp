@@ -16,7 +16,6 @@
 
 #include <cutils/log.h>
 #include <cutils/properties.h>
-#include <cutils/properties.h>
 #include <RefBaseDump.h>
 
 namespace android {
