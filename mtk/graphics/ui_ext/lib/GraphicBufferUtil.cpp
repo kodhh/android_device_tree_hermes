@@ -11,17 +11,8 @@
 #include <ui/GraphicBufferMapper.h>
 
 #include <png.h>
+#include <SkColorData.h>
 //#include <transform_scanline.h>
-// RGB565 unpacking (replaces Skia's SkPacked16ToR32/G32/B32)
-static inline uint32_t SkPacked16ToR32(uint16_t c) {
-    return ((c >> 11) & 0x1F) << 3;
-}
-static inline uint32_t SkPacked16ToG32(uint16_t c) {
-    return ((c >> 5) & 0x3F) << 2;
-}
-static inline uint32_t SkPacked16ToB32(uint16_t c) {
-    return (c & 0x1F) << 3;
-}
 
 #include <GraphicBufferUtil.h>
 #include <graphics_mtk_defs.h>
