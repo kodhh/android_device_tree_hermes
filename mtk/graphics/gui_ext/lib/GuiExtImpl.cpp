@@ -177,7 +177,9 @@ status_t GuiExtPool::alloc(const sp<IBinder>& token, uint32_t gralloc_usage, uin
 
     if (size == 0) {
         DisplayInfo dinfo;
-        sp<IBinder> display = SurfaceComposerClient::getInternalDisplayToken();
+        const auto ids = SurfaceComposerClient::getPhysicalDisplayIds();
+        sp<IBinder> display = ids.empty() ? nullptr
+                : SurfaceComposerClient::getPhysicalDisplayToken(ids[0]);
         SurfaceComposerClient::getDisplayInfo(display, &dinfo);
 
         mDefaultDisplayWidth = dinfo.w;
