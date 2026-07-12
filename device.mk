@@ -55,6 +55,11 @@ PRODUCT_PACKAGES += \
     libccci_util \
     reset-modem
 
+# F2FS tools
+PRODUCT_PACKAGES += \
+    mkfs.f2fs \
+    fsck.f2fs
+
 # Wifi tools
 PRODUCT_PACKAGES += \
     libwpa_client \
