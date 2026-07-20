@@ -11,7 +11,8 @@ PRODUCT_PACKAGES += \
 
 # GPS HAL
 PRODUCT_PACKAGES += \
-    android.hardware.gnss@1.0-impl
+    android.hardware.gnss@1.0-impl \
+    android.hardware.gnss@1.0-service
 
 # GPS force mode
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -20,22 +21,24 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Audio HAL
 PRODUCT_PACKAGES += \
     android.hardware.audio@5.0-impl \
-    android.hardware.audio.effect@5.0-impl
+    android.hardware.audio@5.0-service \
+    android.hardware.audio.effect@5.0-impl \
+    android.hardware.audio.effect@5.0-service
 
-# FM Radio HAL
-PRODUCT_PACKAGES += \
-    android.hardware.broadcastradio@1.0-impl
+
 
 # Display HAL
 PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator@2.0-impl \
     android.hardware.graphics.allocator@2.0-service \
     android.hardware.graphics.composer@2.1-impl \
+    android.hardware.graphics.composer@2.1-service \
     android.hardware.graphics.mapper@2.1-impl
 
 # RenderScript
 PRODUCT_PACKAGES += \
-    android.hardware.renderscript@1.0-impl
+    android.hardware.renderscript@1.0-impl \
+    android.hardware.renderscript@1.0-service
 
 # memtrack
 PRODUCT_PACKAGES += \
@@ -45,7 +48,8 @@ PRODUCT_PACKAGES += \
 # Camera HAL
 PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.4-impl \
-    android.hardware.camera.provider@2.4-legacy
+    android.hardware.camera.provider@2.4-legacy \
+    android.hardware.camera.provider@2.4-service
 
 # Bluetooth HAL
 PRODUCT_PACKAGES += \
@@ -107,10 +111,7 @@ PRODUCT_PACKAGES += \
     android.hardware.health@2.0-service \
     android.hardware.health@2.0-service.override
 
-# Thermal HAL
-PRODUCT_PACKAGES += \
-    android.hardware.thermal@1.0-service \
-    android.hardware.thermal@1.0-impl
+
 
 # RIL HAL
 PRODUCT_PACKAGES += \

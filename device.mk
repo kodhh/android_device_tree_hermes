@@ -4,8 +4,10 @@ DEVICE_PATH := device/xiaomi/hermes
 # Vendor
 $(call inherit-product, vendor/xiaomi/hermes/hermes-vendor.mk)
 
-# Dalvik
-$(call inherit-product, $(DEVICE_PATH)/phone-xxhdpi-2048-dalvik-heap.mk)
+# VNDK
+PRODUCT_PACKAGES += \
+    vndk_package \
+    libstdc++.vendor
 
 # Properties
 include $(DEVICE_PATH)/props.mk
@@ -84,9 +86,14 @@ PRODUCT_PACKAGES += \
     libbt-vendor \
     libbluetooth_mtk
 
-# FM Radio
+# Init
 PRODUCT_PACKAGES += \
-    FMRadio
+    libinit_hermes
+
+# FM
+PRODUCT_PACKAGES += \
+    FMRadio \
+    libfmjni
 
 # Audio
 PRODUCT_PACKAGES += \
@@ -143,3 +150,7 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 # Fstab
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.mt6795:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.mt6795
+
+# Linker config
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/ld.config.vndk_lite.txt:$(TARGET_COPY_OUT_SYSTEM)/etc/ld.config.vndk_lite.txt
