@@ -4,11 +4,6 @@ DEVICE_PATH := device/xiaomi/hermes
 # Vendor
 $(call inherit-product, vendor/xiaomi/hermes/hermes-vendor.mk)
 
-# VNDK
-PRODUCT_PACKAGES += \
-    vndk_package \
-    libstdc++.vendor
-
 # Properties
 include $(DEVICE_PATH)/props.mk
 
@@ -75,6 +70,11 @@ PRODUCT_PACKAGES += \
     libgui_ext \
     libui_ext \
     libunwind
+
+# VNDK
+PRODUCT_PACKAGES += \
+    vndk_package \
+    libstdc++.vendor
 
 # GPS
 PRODUCT_PACKAGES += \
