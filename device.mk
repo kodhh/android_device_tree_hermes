@@ -76,6 +76,10 @@ PRODUCT_PACKAGES += \
     vndk_package \
     libstdc++.vendor
 
+# HIDL
+PRODUCT_PACKAGES += \
+    android.hidl.base@1.0
+
 # GPS
 PRODUCT_PACKAGES += \
     libcurl \
@@ -150,7 +154,3 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 # Fstab
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/fstab.mt6795:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.mt6795
-
-# Linker config
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/ld.config.vndk_lite.txt:$(TARGET_COPY_OUT_SYSTEM)/etc/ld.config.vndk_lite.txt
