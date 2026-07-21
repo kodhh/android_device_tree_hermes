@@ -5,7 +5,7 @@ PRODUCT_PACKAGES += \
 
 # Wifi
 PRODUCT_PACKAGES += \
-    android.hardware.wifi@1.0-service \
+    android.hardware.wifi@1.0-service-lazy \
     android.hardware.wifi.hostapd@1.0 \
     android.hardware.wifi.supplicant@1.1
 
@@ -22,10 +22,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PACKAGES += \
     android.hardware.audio@5.0-impl \
     android.hardware.audio@5.0-service \
-    android.hardware.audio.effect@5.0-impl \
-    android.hardware.audio.effect@5.0-service
-
-
+    android.hardware.audio.effect@5.0-impl
 
 # Display HAL
 PRODUCT_PACKAGES += \
@@ -57,7 +54,7 @@ PRODUCT_PACKAGES += \
 
 # USB HAL
 PRODUCT_PACKAGES += \
-    android.hardware.usb@1.1-service.basic
+    android.hardware.usb@1.0-service.basic
 
 # Omx
 PRODUCT_PACKAGES += \
@@ -109,8 +106,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.health@2.0-service \
     android.hardware.health@2.0-service.override
-
-
 
 # RIL HAL
 PRODUCT_PACKAGES += \
