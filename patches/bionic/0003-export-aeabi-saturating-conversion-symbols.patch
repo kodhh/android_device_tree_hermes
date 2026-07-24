@@ -1,0 +1,65 @@
+From ecb5e1043930767b2df9b6c5f0a183d77ee074e4 Mon Sep 17 00:00:00 2001
+From: kodhh <kodhh@github>
+Date: Fri, 24 Jul 2026 10:00:00 +0000
+Subject: [PATCH 3/3] Export __aeabi_f2lz/d2lz/f2ulz/d2ulz from libc
+
+Vendor blobs (libGLESv2_mtk.so, liboclcompiler.so, libmnl.so)
+need saturating float/double-to-long-long conversion symbols.
+These are implemented in compiler-rt (ARM_EABI_FNALIAS aliases
+for __fixsfdi/__fixdfdi/__fixunssfdi/__fixunsdfdi) but hidden
+by the version script's local: *; catch-all.  Export them as
+LIBC_PRIVATE so the linker can find them.
+
+Change-Id: I3c1c5e7b7f6a8b9c0d1e2f3a4b5c6d7e8f9a0b1c
+---
+ libc/libc.arm.map | 4 ++++
+ libc/libc.map.txt | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/libc/libc.arm.map b/libc/libc.arm.map
+index 3bec59aed..8f7a1b2c3 100644
+--- a/libc/libc.arm.map
++++ b/libc/libc.arm.map
+@@ -780,6 +780,8 @@ LIBC_PRIVATE {
+     __aeabi_d2f; # arm
+     __aeabi_d2iz; # arm
+     __aeabi_d2uiz; # arm
++    __aeabi_d2lz; # arm
++    __aeabi_d2ulz; # arm
+     __aeabi_dadd; # arm
+     __aeabi_dcmpeq; # arm
+     __aeabi_dcmpge; # arm
+@@ -800,6 +802,8 @@ LIBC_PRIVATE {
+     __aeabi_f2d; # arm
+     __aeabi_f2iz; # arm
+     __aeabi_f2uiz; # arm
++    __aeabi_f2lz; # arm
++    __aeabi_f2ulz; # arm
+     __aeabi_fadd; # arm
+     __aeabi_fcmpeq; # arm
+     __aeabi_fcmpge; # arm
+diff --git a/libc/libc.map.txt b/libc/libc.map.txt
+index eb79a03ca..9f0b1a2c3 100644
+--- a/libc/libc.map.txt
++++ b/libc/libc.map.txt
+@@ -780,6 +780,8 @@ LIBC_PRIVATE {
+     __aeabi_d2f; # arm
+     __aeabi_d2iz; # arm
+     __aeabi_d2uiz; # arm
++    __aeabi_d2lz; # arm
++    __aeabi_d2ulz; # arm
+     __aeabi_dadd; # arm
+     __aeabi_dcmpeq; # arm
+     __aeabi_dcmpge; # arm
+@@ -800,6 +802,8 @@ LIBC_PRIVATE {
+     __aeabi_f2d; # arm
+     __aeabi_f2iz; # arm
+     __aeabi_f2uiz; # arm
++    __aeabi_f2lz; # arm
++    __aeabi_f2ulz; # arm
+     __aeabi_fadd; # arm
+     __aeabi_fcmpeq; # arm
+     __aeabi_fcmpge; # arm
+-- 
+2.20.1
+

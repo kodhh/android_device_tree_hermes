@@ -3,7 +3,7 @@
 rootdirectory="$PWD"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-dirs="frameworks/av frameworks/base frameworks/native frameworks/opt/telephony hardware/interfaces packages/apps/FMRadio system/core system/netd"
+dirs="bionic frameworks/av frameworks/base frameworks/native frameworks/opt/telephony hardware/interfaces packages/apps/FMRadio system/core system/netd"
 
 # red + nocolor
 RED='\033[0;31m'

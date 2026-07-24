@@ -1,18 +1,15 @@
 # Power HAL
 PRODUCT_PACKAGES += \
-    android.hardware.power@1.3-impl \
-    android.hardware.power@1.3-service
+    android.hardware.power@1.0-impl \
+    android.hardware.power@1.0-service
 
 # Wifi
 PRODUCT_PACKAGES += \
-    android.hardware.wifi@1.0-service-lazy \
-    android.hardware.wifi.hostapd@1.0 \
-    android.hardware.wifi.supplicant@1.1
+    android.hardware.wifi@1.0-service
 
 # GPS HAL
 PRODUCT_PACKAGES += \
-    android.hardware.gnss@1.0-impl \
-    android.hardware.gnss@1.0-service
+    android.hardware.gnss@1.0-impl
 
 # GPS force mode
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -21,16 +18,17 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Audio HAL
 PRODUCT_PACKAGES += \
     android.hardware.audio@5.0-impl \
-    android.hardware.audio@5.0-service \
+    android.hardware.audio@2.0-service \
     android.hardware.audio.effect@5.0-impl
+
+# FM Radio (not needed - FMRadio + libfmjni bypasses HIDL entirely, vendor has no broadcastradio impl)
 
 # Display HAL
 PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator@2.0-impl \
     android.hardware.graphics.allocator@2.0-service \
     android.hardware.graphics.composer@2.1-impl \
-    android.hardware.graphics.composer@2.1-service \
-    android.hardware.graphics.mapper@2.1-impl
+    android.hardware.graphics.mapper@2.0-impl
 
 # RenderScript
 PRODUCT_PACKAGES += \
@@ -42,10 +40,7 @@ PRODUCT_PACKAGES += \
     android.hardware.memtrack@1.0-service
 
 # Camera HAL
-PRODUCT_PACKAGES += \
-    android.hardware.camera.provider@2.4-impl \
-    android.hardware.camera.provider@2.4-legacy \
-    android.hardware.camera.provider@2.4-service
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-impl-legacy
 
 # Bluetooth HAL
 PRODUCT_PACKAGES += \
@@ -99,13 +94,18 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.drm@1.0-impl \
     android.hardware.drm@1.0-service \
-    android.hardware.drm@1.2-service.clearkey \
-    android.hardware.drm@1.2-service.widevine
+    android.hardware.drm@1.1-service.clearkey \
+    android.hardware.drm@1.1-service.widevine
 
 # Health HAL
 PRODUCT_PACKAGES += \
     android.hardware.health@2.0-service \
     android.hardware.health@2.0-service.override
+
+# Thermal HAL (vendor has no thermal.*.so legacy module, but AOSP impl still registers as empty service)
+PRODUCT_PACKAGES += \
+    android.hardware.thermal@1.0-service \
+    android.hardware.thermal@1.0-impl
 
 # RIL HAL
 PRODUCT_PACKAGES += \
