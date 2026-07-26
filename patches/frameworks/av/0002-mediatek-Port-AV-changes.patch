@@ -1,26 +1,8 @@
-From 6fa400b5f5e84c55384a01f82782a68bb6de30c1 Mon Sep 17 00:00:00 2001
-From: bilux <i.bilux@gmail.com>
-Date: Mon, 23 Mar 2020 10:45:36 +0100
-Subject: [PATCH] mediatek: Port AV changes
-
-This ports the changes required to perform video decoding
-and enconding.
-
-The changes are ported from the mediatek BSP for mt6592
-with the minimum required feature set and confined to
-allow co-existance with changes from other vendors.
-
-Co-authored-by: Dinolek <18579460+Dinolek@users.noreply.github.com>
-Signed-off-by: bilux <i.bilux@gmail.com>
----
- media/libstagefright/ACodec.cpp | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 014dfa9..5b5156f 100644
+index 55e8130..7948297 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -60,6 +60,10 @@
+@@ -61,6 +61,10 @@
  #include "include/SharedMemoryBuffer.h"
  #include <media/stagefright/omx/OMXUtils.h>
  
@@ -55,6 +37,3 @@ index 014dfa9..5b5156f 100644
              def.format.video.eColorFormat,
              mRotationDegrees,
              usage,
--- 
-2.31.1
-

@@ -1,5 +1,5 @@
 diff --git a/server/TetherController.cpp b/server/TetherController.cpp
-index e9445c8..64ff80b 100644
+index e9445c8..bef9326 100644
 --- a/server/TetherController.cpp
 +++ b/server/TetherController.cpp
 @@ -696,7 +696,7 @@ int TetherController::setForwardRules(bool add, const char *intIface, const char

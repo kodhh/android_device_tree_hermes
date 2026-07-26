@@ -1,15 +1,28 @@
 diff --git a/services/mediacodec/main_codecservice.cpp b/services/mediacodec/main_codecservice.cpp
-index 6a82b1b..47c0a3f 100644
+index 6a82b1b..2a7580e 100644
 --- a/services/mediacodec/main_codecservice.cpp
 +++ b/services/mediacodec/main_codecservice.cpp
-@@ -28,6 +28,10 @@
- 
- #include <dlfcn.h>
+@@ -26,6 +26,10 @@
+ #include <media/stagefright/omx/1.0/Omx.h>
+ #include <media/stagefright/omx/1.0/OmxStore.h>
  
 +#ifndef MTK_HARDWARE
 +#define MTK_HARDWARE
 +#endif
 +
- using namespace android;
+ #include <dlfcn.h>
  
- // Must match location in Android.mk.
+ using namespace android;
+@@ -43,8 +47,12 @@ int main(int argc __unused, char** argv)
+     signal(SIGPIPE, SIG_IGN);
+     SetUpMinijail(kSystemSeccompPolicyPath, kVendorSeccompPolicyPath);
+ 
++#ifndef MTK_HARDWARE
+     android::ProcessState::initWithDriver("/dev/vndbinder");
+     android::ProcessState::self()->startThreadPool();
++#else
++    android::ProcessState::initWithDriver("/dev/binder");
++#endif
+ 
+     ::android::hardware::configureRpcThreadpool(64, false);
+ 
