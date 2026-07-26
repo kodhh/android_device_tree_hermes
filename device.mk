@@ -24,6 +24,9 @@ endif
 TARGET_SCREEN_HEIGHT := 1920
 TARGET_SCREEN_WIDTH := 1080
 
+# DT2W
+TARGET_TAP_TO_WAKE_NODE := /sys/android_touch/doubletap2wake
+
 # Screen density
 PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := xxhdpi
