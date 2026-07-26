@@ -1,0 +1,28 @@
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index 39ab5ff5..f22de5ec 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -1875,6 +1875,8 @@
+     <string-array name="config_locationProviderPackageNames" translatable="false">
+         <!-- The standard AOSP fused location provider -->
+         <item>com.android.location.fused</item>
++        <!-- The (faked) microg fused location provider (a free reimplementation) -->
++        <item>com.google.android.gms</item>
+     </string-array>
+ 
+     <!-- This string array can be overriden to enable test location providers initially. -->
+diff --git a/services/core/java/com/android/server/pm/PackageManagerService.java b/services/core/java/com/android/server/pm/PackageManagerService.java
+index 5e27920b..cb5a1a80 100644
+--- a/services/core/java/com/android/server/pm/PackageManagerService.java
++++ b/services/core/java/com/android/server/pm/PackageManagerService.java
+@@ -4165,10 +4165,6 @@ public class PackageManagerService extends IPackageManager.Stub
+     private static native boolean isDebuggable();
+ 
+     public static boolean isMicrogSigned(PackageParser.Package p) {
+-        if (!isDebuggable()) {
+-            return false;
+-        }
+-
+         // Allowlist the following apps:
+         // * com.android.vending - microG Companion
+         // * com.google.android.gms - microG Services
