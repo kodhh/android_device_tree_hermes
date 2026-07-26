@@ -1,4 +1,7 @@
 
+# EGL
+ro.hardware.egl=mtk
+
 # RIL
 rild.libpath=/vendor/lib64/mtk-ril.so
 rild.libargs=-d /dev/ttyC0

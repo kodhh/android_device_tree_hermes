@@ -20,6 +20,7 @@ LOCAL_PROPRIETARY_MODULE := true
 LOCAL_MODULE_OWNER := mtk
 LOCAL_SHARED_LIBRARIES := liblog libcutils libnvram
 LOCAL_PRELINK_MODULE := false
+LOCAL_LDFLAGS += -Wl,--undefined-version -Wl,--no-fatal-warnings
 include $(BUILD_SHARED_LIBRARY)
 
 ###########################################################################

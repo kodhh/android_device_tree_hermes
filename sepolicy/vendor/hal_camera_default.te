@@ -1,0 +1,28 @@
+# Camera HAL on MT6795 needs access to MTK-specific camera devices
+# and vendor blobs loaded via hw_get_module
+
+allow hal_camera_default camera_isp_device:chr_file rw_file_perms;
+allow hal_camera_default camera_sysram_device:chr_file rw_file_perms;
+allow hal_camera_default camera_fdvt_device:chr_file rw_file_perms;
+allow hal_camera_default camera_pipemgr_device:chr_file rw_file_perms;
+allow hal_camera_default kd_camera_hw_device:chr_file rw_file_perms;
+allow hal_camera_default kd_camera_flashlight_device:chr_file rw_file_perms;
+allow hal_camera_default kd_camera_hw_bus2_device:chr_file rw_file_perms;
+allow hal_camera_default mtk_jpeg_device:chr_file rw_file_perms;
+allow hal_camera_default lens_device:chr_file rw_file_perms;
+allow hal_camera_default CAM_CAL_DRV_device:chr_file rw_file_perms;
+allow hal_camera_default dummy_cam_cal_device:chr_file rw_file_perms;
+allow hal_camera_default seninf_device:chr_file rw_file_perms;
+
+# Access to MTK vendor libraries loaded via hw_get_module
+allow hal_camera_default vendor_file:file rx_file_perms;
+allow hal_camera_default vendor_file:dir r_dir_perms;
+allow hal_camera_default same_process_hal_file:file rx_file_perms;
+
+# Needed for MTK camera pipeline via ION
+allow hal_camera_default ion_device:chr_file rw_file_perms;
+allow hal_camera_default gpu_device:chr_file rw_file_perms;
+
+# MTK camera uses sysram
+allow hal_camera_default self:capability sys_rawio;
+allow hal_camera_default self:capability dac_override;

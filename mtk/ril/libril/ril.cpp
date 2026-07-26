@@ -656,15 +656,7 @@ void userTimerCallback (int fd, short flags, void *param) {
     if (p_info->cid >= RIL_URC) {
 	RLOGD("userTimerCallback: call directly, cid=%u, pthread=%lu",
 		p_info->cid, pthread_self());
-#if 1
-	enqueue(NULL, NULL, 0, p_info, RIL_SOCKET_1);
-	return;
-#else
-//	int cid = (int)p_info->cid;
-//	threadPid[cid] = pthread_self();	// ** guess ??
-//	addThreadPid(cid, pthread_self());
 	p_info->p_callback(p_info->userParam);
-#endif
     } else
 	p_info->p_callback(p_info->userParam);
 

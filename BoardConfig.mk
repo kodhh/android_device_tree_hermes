@@ -4,6 +4,11 @@ DEVICE_PATH := device/xiaomi/hermes
 # Include
 TARGET_SPECIFIC_HEADER_PATH := $(DEVICE_PATH)/include
 
+# Build
+BUILD_BROKEN_DUP_RULES := true
+BUILD_BROKEN_PHONY_TARGETS := true
+TARGET_KERNEL_STRIP_WERROR := true
+
 # Board
 TARGET_BOOTLOADER_BOARD_NAME := mt6795
 TARGET_BOARD_PLATFORM := mt6795
@@ -22,9 +27,6 @@ TARGET_2ND_ARCH_VARIANT := armv8-a
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := cortex-a53
-
-# Build old-style zip files (required for ota updater)
-BLOCK_BASED_OTA := false
 
 # Kernel
 BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2
@@ -46,6 +48,8 @@ TARGET_KERNEL_CONFIG := hermes_defconfig
 BOARD_KERNEL_IMAGE_NAME := Image.gz-dtb
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
+TARGET_KERNEL_CLANG_COMPILE=false
+TARGET_KERNEL_ADDITIONAL_FLAGS := MTK_PLATFORM=mt6795
 
 # Partitons
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 12737560576
@@ -56,11 +60,13 @@ BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
 BOARD_FLASH_BLOCK_SIZE := 131072
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 
-# EXT4
+# Filesystem
 TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
 
 # Hardware
 BOARD_USES_MTK_HARDWARE := true
+MTK_HARDWARE := true
 
 # DRM
 TARGET_ENABLE_MEDIADRM_64 := true
@@ -101,6 +107,9 @@ TARGET_SPECIFIC_CAMERA_PARAMETER_LIBRARY := libcamera_parameters_mtk
 # Low-ram
 MALLOC_SVELTE := true
 
+# DT2W (Double Tap to Wake)
+TARGET_TAP_TO_WAKE_NODE := "/sys/android_touch/doubletap2wake"
+
 # Device specific props
 TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
 
@@ -124,12 +133,18 @@ WIFI_DRIVER_STATE_CTRL_PARAM := "/dev/wmtWifi"
 WIFI_DRIVER_STATE_ON := 1
 WIFI_DRIVER_STATE_OFF := 0
 
+# Network Routing
+TARGET_IGNORES_FTP_PPTP_CONNTRACK_FAILURE := true
+
 # Recovery
-TARGET_RECOVERY_FSTAB := vendor/xiaomi/hermes/proprietary/vendor/etc/fstab.$(TARGET_BOARD_PLATFORM)
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.$(TARGET_BOARD_PLATFORM)
 
 # Sepolicy
-#BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy
-#SELINUX_IGNORE_NEVERALLOWS := true
+# Include common MediaTek sepolicy (clone erfanoabdi/android_device_mediatek_sepolicy to device/mediatek/sepolicy)
+include device/mediatek/sepolicy/sepolicy.mk
+BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(DEVICE_PATH)/sepolicy/private
+BOARD_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
+SELINUX_IGNORE_NEVERALLOWS := true
 
 # Disable dex pre-opt
 ifeq ($(HOST_OS),linux)
@@ -145,15 +160,19 @@ endif
 DEVICE_MATRIX_FILE := $(DEVICE_PATH)/compatibility_matrix.xml
 DEVICE_MANIFEST_FILE := $(DEVICE_PATH)/manifest.xml
 
+# APEX (required for Android 10+)
+OVERRIDE_TARGET_FLATTEN_APEX := true
+
 # Treble
 #BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
-#PRODUCT_FULL_TREBLE_OVERRIDE := true
+PRODUCT_FULL_TREBLE_OVERRIDE := false
 #BOARD_VNDK_RUNTIME_DISABLE := true
-TARGET_COPY_OUT_VENDOR := system/vendor
+BOARD_USES_VENDORIMAGE := false
+TARGET_COPY_OUT_VENDOR := vendor
 #BOARD_VNDK_VERSION := current
 
 # Vendor
-VENDOR_SECURITY_PATCH := 2016-12-01
+VENDOR_SECURITY_PATCH := 2020-05-05
 COMPILE_MTK_PROPRIETARY := true
 
 # Legacy blob support

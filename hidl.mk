@@ -17,13 +17,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # Audio HAL
 PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-impl \
+    android.hardware.audio@5.0-impl \
     android.hardware.audio@2.0-service \
-    android.hardware.audio.effect@2.0-impl
-
-# FM Radio HAL
-PRODUCT_PACKAGES += \
-    android.hardware.broadcastradio@1.0-impl
+    android.hardware.audio.effect@5.0-impl
 
 # Display HAL
 PRODUCT_PACKAGES += \
@@ -99,15 +95,13 @@ PRODUCT_PACKAGES += \
     android.hardware.drm@1.1-service.clearkey \
     android.hardware.drm@1.1-service.widevine
 
+# Trust HAL
+PRODUCT_PACKAGES += \
+    vendor.lineage.trust@1.0-service
+
 # Health HAL
 PRODUCT_PACKAGES += \
-    android.hardware.health@2.0-service \
-    android.hardware.health@2.0-service.override
-
-# Thermal HAL
-PRODUCT_PACKAGES += \
-    android.hardware.thermal@1.0-service \
-    android.hardware.thermal@1.0-impl
+    android.hardware.health@2.0-service
 
 # RIL HAL
 PRODUCT_PACKAGES += \

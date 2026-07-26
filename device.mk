@@ -4,9 +4,6 @@ DEVICE_PATH := device/xiaomi/hermes
 # Vendor
 $(call inherit-product, vendor/xiaomi/hermes/hermes-vendor.mk)
 
-# Dalvik
-$(call inherit-product, $(DEVICE_PATH)/phone-xxhdpi-2048-dalvik-heap.mk)
-
 # Properties
 include $(DEVICE_PATH)/props.mk
 
@@ -45,6 +42,12 @@ PRODUCT_PACKAGES += \
     mtklog \
     mtkui \
     libshim_mutexdestroy
+
+# Vendor daemons (rebuild from source)
+PRODUCT_PACKAGES += \
+    ged_srv \
+    gas_srv \
+    md_ctrl
 
 # Power HAL
 PRODUCT_PACKAGES += power.mt6795

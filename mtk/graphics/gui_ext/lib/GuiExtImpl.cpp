@@ -176,13 +176,19 @@ status_t GuiExtPool::alloc(const sp<IBinder>& token, uint32_t gralloc_usage, uin
     }
 
     if (size == 0) {
-        DisplayInfo dinfo;
-        sp<IBinder> display = SurfaceComposerClient::getBuiltInDisplay(
-                ISurfaceComposer::eDisplayIdMain);
-        SurfaceComposerClient::getDisplayInfo(display, &dinfo);
-
-        mDefaultDisplayWidth = dinfo.w;
-        mDefaultDisplayHeight = dinfo.h;
+        const auto ids = SurfaceComposerClient::getPhysicalDisplayIds();
+        sp<IBinder> display = ids.empty() ? nullptr
+                : SurfaceComposerClient::getPhysicalDisplayToken(ids[0]);
+        if (display) {
+            Vector<DisplayInfo> configs;
+            if (SurfaceComposerClient::getDisplayConfigs(display, &configs) == NO_ERROR
+                    && !configs.isEmpty()) {
+                int active = SurfaceComposerClient::getActiveConfig(display);
+                if (active < 0 || active >= (int)configs.size()) active = 0;
+                mDefaultDisplayWidth = configs[active].w;
+                mDefaultDisplayHeight = configs[active].h;
+            }
+        }
 
         sp<DispInfo> disp = new DispInfo;
         disp->type = 0;

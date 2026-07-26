@@ -21,6 +21,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196609 \
     ro.sf.lcd_density=480
 
+# APEX
+PRODUCT_PROPERTY_OVERRIDES += ro.apex.updatable=false
+
 # RIL
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.fd.counter=15 \

@@ -86,6 +86,8 @@ LOCAL_CLANG := true
 
 LOCAL_SANITIZE := integer
 
+LOCAL_LDFLAGS += -Wl,--undefined-version -Wl,--no-fatal-warnings
+
 include $(BUILD_SHARED_LIBRARY)
 
 endif # BOARD_PROVIDES_LIBRIL

@@ -15,7 +15,6 @@
 #endif
 
 #include <cutils/log.h>
-#include "SkColorPriv.h" //#include <cutils/process_name.h>
 #include <cutils/properties.h>
 #include <RefBaseDump.h>
 

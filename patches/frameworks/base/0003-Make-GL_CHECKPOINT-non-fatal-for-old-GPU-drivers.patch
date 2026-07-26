@@ -1,0 +1,33 @@
+From 3277814187e7404d242106a0efcdd5ce5216e070 Mon Sep 17 00:00:00 2001
+From: root
+ <root@runnervmvrwv9.30ctfoctnghuzkbs5ahlgug0qg.cx.internal.cloudapp.net>
+Date: Sun, 26 Jul 2026 03:16:25 +0000
+Subject: [PATCH] hwui: Make GL_CHECKPOINT non-fatal for old GPU drivers
+
+The PowerVR GPU driver on MT6795 returns GL_INVALID_ENUM on
+Android 10. Since DEBUG_OPENGL defaults to DEBUG_LEVEL_LOW (1)
+in Debug.h, GL_CHECKPOINT(LOW) is always active and
+LOG_ALWAYS_FATAL_IF(dumpGLErrors()) causes every app to abort
+on first frame.
+
+Change to ALOGE_IF so errors are logged but don't crash.
+---
+ libs/hwui/utils/GLUtils.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/hwui/utils/GLUtils.h b/libs/hwui/utils/GLUtils.h
+index ca8810bd..012164b6 100644
+--- a/libs/hwui/utils/GLUtils.h
++++ b/libs/hwui/utils/GLUtils.h
+@@ -33,7 +33,7 @@ namespace uirenderer {
+ #define GL_CHECKPOINT(LEVEL)                                                                      \
+     do {                                                                                          \
+         if (DEBUG_OPENGL >= DEBUG_LEVEL_##LEVEL) {                                                \
+-            LOG_ALWAYS_FATAL_IF(android::uirenderer::GLUtils::dumpGLErrors(), "GL errors! %s:%d", \
++            ALOGE_IF(android::uirenderer::GLUtils::dumpGLErrors(), "GL errors! %s:%d", \
+                                 __FILE__, __LINE__);                                              \
+         }                                                                                         \
+     } while (0)
+-- 
+2.54.0
+
