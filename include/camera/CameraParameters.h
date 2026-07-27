@@ -103,6 +103,9 @@ public:
     void setPictureFormat(const char *format);
     const char *getPictureFormat() const;
 
+    void setCameraPictureFlip(const int format);
+    int getCameraPictureFlip() const;
+
     void dump() const;
     status_t dump(int fd, const Vector<String16>& args) const;
 
@@ -541,6 +544,13 @@ public:
     // Supported modes for special effects with light.
     // Example values: "lowlight,hdr".
     static const char KEY_LIGHTFX[];
+
+    // Picture flip
+    static const char KEY_SNAPSHOT_PICTURE_FLIP[];
+
+    // HDR mode
+    static const char KEY_VIDEO_HDR_MODE[];
+    static const char KEY_VIDEO_HDR_MODES[];
 
     // Value for KEY_ZOOM_SUPPORTED or KEY_SMOOTH_ZOOM_SUPPORTED.
     static const char TRUE[];
