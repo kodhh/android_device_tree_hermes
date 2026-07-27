@@ -257,8 +257,6 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    RIL_startEventLoop();
-
     rilInitSocket = (const int(*)(void))dlsym(dlHandle, "RIL_InitSocket");
 
     if (rilInitSocket == NULL) {
@@ -318,6 +316,8 @@ int main(int argc, char **argv) {
     }
 
     RLOGD("RIL_register_socket completed");
+
+    RIL_startEventLoop();
 
 done:
 
