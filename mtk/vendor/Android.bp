@@ -38,4 +38,5 @@ cc_binary {
     shared_libs: [
         "liblog",
     ],
+    init_rc: ["md_ctrl.rc"],
 }
