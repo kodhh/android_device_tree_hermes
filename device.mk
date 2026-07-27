@@ -8,7 +8,7 @@ $(call inherit-product, vendor/xiaomi/hermes/hermes-vendor.mk)
 include $(DEVICE_PATH)/props.mk
 
 # HIDL (HAL Interface Definition Language)
--include $(DEVICE_PATH)/hidl.mk
+include $(DEVICE_PATH)/hidl.mk
 
 # Overlays
 PRODUCT_ENFORCE_RRO_TARGETS := framework-res
@@ -68,7 +68,9 @@ PRODUCT_PACKAGES += \
     libGLES_android \
     libgralloc_extra \
     libgui_ext \
-    libui_ext
+    libui_ext \
+    libunwind \
+    libstdc++.vendor
 
 # GPS
 PRODUCT_PACKAGES += \
@@ -116,11 +118,12 @@ PRODUCT_COPY_FILES += \
 
 # Audio
 PRODUCT_COPY_FILES += \
-    frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/a2dp_audio_policy_configuration.xml \
-    frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/audio_policy_volumes.xml \
-    frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/default_volume_tables.xml \
-    frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/r_submix_audio_policy_configuration.xml \
-    frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/usb_audio_policy_configuration.xml
+    $(DEVICE_PATH)/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
+    frameworks/av/services/audiopolicy/config/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
+    frameworks/av/services/audiopolicy/config/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
+    frameworks/av/services/audiopolicy/config/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
+    frameworks/av/services/audiopolicy/config/r_submix_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/r_submix_audio_policy_configuration.xml \
+    frameworks/av/services/audiopolicy/config/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml
 
 # Google codecs
 PRODUCT_COPY_FILES += \
@@ -135,3 +138,7 @@ PRODUCT_COPY_FILES += \
 
 # dalvik GC tag
 PRODUCT_TAGS += dalvik.gc.type-precise
+
+# Fstab
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/etc/fstab.mt6795:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.mt6795
