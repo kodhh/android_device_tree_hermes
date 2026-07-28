@@ -136,6 +136,9 @@ WIFI_DRIVER_STATE_OFF := 0
 # Network Routing
 TARGET_IGNORES_FTP_PPTP_CONNTRACK_FAILURE := true
 
+# Init
+TARGET_INIT_VENDOR_LIB := libinit_hermes
+
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.$(TARGET_BOARD_PLATFORM)
 
