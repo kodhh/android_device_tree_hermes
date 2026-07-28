@@ -41,13 +41,16 @@ PRODUCT_PACKAGES += \
     mtkc \
     mtklog \
     mtkui \
-    libshim_mutexdestroy
+    libshim_mutexdestroy \
+    libmtk_symbols \
+    libaeabi_shim
 
 # Vendor daemons (rebuild from source)
 PRODUCT_PACKAGES += \
     ged_srv \
     gas_srv \
-    md_ctrl
+    md_ctrl \
+    md_ctrl.rc
 
 # Power HAL
 PRODUCT_PACKAGES += power.mt6795
