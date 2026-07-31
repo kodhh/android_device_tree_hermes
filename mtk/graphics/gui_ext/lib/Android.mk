@@ -51,6 +51,8 @@ ifeq ($(MTK_MIRAVISION_SUPPORT),yes)
 LOCAL_CFLAGS += -DCONFIG_FOR_SOURCE_PQ
 endif
 
+LOCAL_LDFLAGS += -Wl,--undefined-version -Wl,--no-fatal-warnings
+
 LOCAL_MODULE := libgui_ext
 
 LOCAL_PROPRIETARY_MODULE := true

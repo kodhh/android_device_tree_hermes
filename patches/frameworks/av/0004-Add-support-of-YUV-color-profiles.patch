@@ -9,7 +9,7 @@ index 55e8130..3053eac 100644
 -                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar) {
 +                || format.eColorFormat == OMX_TI_COLOR_FormatYUV420PackedSemiPlanar
 +#ifdef MTK_HARDWARE
-+                || format.eColorFormat == HAL_PIXEL_FORMAT_YV12
++                || format.eColorFormat == (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YV12
 +                || format.eColorFormat == OMX_MTK_COLOR_FormatYV12
 +#endif
 +                ) {

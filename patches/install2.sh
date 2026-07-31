@@ -1,67 +1,110 @@
 #!/bin/sh
 #
-# Re-apply the 0004 patch (dlopen libdpframework) to frameworks/av.
-# First reverses the old 0004 if present, then applies the current version.
+# install2.sh — Re-apply frameworks/av patches after fixing patch bugs
 #
-# Usage (from Android source root):
+# What it does:
+#   1. Reset every file that the frameworks/av patches touch back to HEAD
+#      (removes the broken patch content, incl. previous patch versions)
+#   2. Re-apply ALL frameworks/av patches in order via git apply
+#
+# 0003-microg (frameworks/base) is NEVER touched by this script.
+#
+# Usage:
+#   cd <ANDROID_ROOT>
 #   bash device/xiaomi/hermes/patches/install2.sh
 #
-# Usage (from frameworks/av):
-#   bash /path/to/patches/install2.sh
+# Simulate (print what would be done, no changes):
+#   bash device/xiaomi/hermes/patches/install2.sh --simulate
 #
 
+set -e
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PATCH="$SCRIPT_DIR/frameworks/av/0004-Add-support-of-YUV-color-profiles.patch"
+ANDROID_ROOT="${PWD}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-if [ ! -f "$PATCH" ]; then
-    echo -e "${RED}Patch not found: $PATCH${NC}"
+info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
+err()   { echo -e "${RED}[ERR]${NC} $1"; }
+
+SIMULATE=0
+[ "$1" = "--simulate" ] && SIMULATE=1
+
+MODULE="frameworks/av"
+
+info "===== install2.sh: reset + re-apply $MODULE patches ====="
+echo ""
+
+AV="$ANDROID_ROOT/$MODULE"
+if [ ! -d "$AV" ]; then
+    err "Directory not found: $AV"
+    err "Run install.sh first (or clone LineageOS 17.1 source)"
     exit 1
 fi
 
-# Detect: are we inside frameworks/av or at the source root?
-if [ -f "media/libstagefright/ACodec.cpp" ] && [ -f "media/libstagefright/colorconversion/ColorConverter.cpp" ]; then
-    AV_ROOT="$PWD"
-elif [ -f "frameworks/av/media/libstagefright/ACodec.cpp" ] && [ -f "frameworks/av/media/libstagefright/colorconversion/ColorConverter.cpp" ]; then
-    AV_ROOT="$PWD/frameworks/av"
-else
-    echo -e "${RED}Cannot find frameworks/av (run from source root or from frameworks/av)${NC}"
-    exit 1
-fi
+cd "$AV"
 
-cd "$AV_ROOT" || exit 1
+# ---------------------------------------------------------
+# 1. Reset every file modified by any $MODULE patch to HEAD,
+#    and delete every file created by a patch (--- /dev/null).
+# ---------------------------------------------------------
+info "Resetting files touched by $MODULE patches ..."
 
-echo -e "${RED}Step 1: Reverse old 0004 patch (if applied)${NC}"
-git apply -R "$PATCH" 2>/dev/null
-if [ $? -eq 0 ]; then
-    echo "  Old patch reversed."
-else
-    echo "  No previous patch to reverse (or it was a different version)."
-fi
+FILES=""
+for patch in "$SCRIPT_DIR/$MODULE/"*.patch; do
+    [ -f "$patch" ] || continue
 
-# Clean up new files from old patch versions (in case -R didn't remove them)
-NEW_FILES=$(grep '^--- /dev/null' -A1 "$PATCH" | grep '^+++ b/' | sed 's|+++ b/||')
-for f in $NEW_FILES; do
-    if [ -f "$f" ]; then
-        rm -f "$f"
-        echo "  removed: $f"
+    # collect modified files
+    while IFS= read -r line; do
+        case "$line" in
+            '--- a/'*)
+                f="${line#--- a/}"
+                FILES="$FILES $f"
+                ;;
+        esac
+    done < "$patch"
+
+    # delete files the patch creates
+    old=""
+    while IFS= read -r line; do
+        case "$line" in
+            '--- /dev/null') old="/dev/null" ;;
+            '+++ b/'*)
+                f="${line#+++ b/}"
+                [ "$old" = "/dev/null" ] && { [ $SIMULATE -eq 1 ] && echo "  rm -f $f" || rm -f "$f" 2>/dev/null || true; }
+                old=""
+                ;;
+        esac
+    done < "$patch"
+done
+
+for f in $FILES; do
+    [ $SIMULATE -eq 1 ] && { echo "  git checkout -- $f"; continue; }
+    [ -f "$f" ] && git checkout -- "$f" 2>/dev/null || true
+done
+
+# ---------------------------------------------------------
+# 2. Re-apply ALL $MODULE patches in order via git apply.
+# ---------------------------------------------------------
+info "Re-applying patches ..."
+for patch in $(ls "$SCRIPT_DIR/$MODULE/"*.patch | sort); do
+    name="$(basename "$patch")"
+    if [ $SIMULATE -eq 1 ]; then
+        echo "  git apply $name"
+        continue
+    fi
+    if git apply "$patch" 2>/dev/null; then
+        echo "  $name"
+    else
+        err "FAILED: $name (git apply)"
+        exit 1
     fi
 done
 
 echo ""
-echo -e "${RED}Step 2: Apply 0004 patch${NC}"
-git apply -v "$PATCH" 2>&1
-if [ $? -ne 0 ]; then
-    echo -e "${RED}git apply failed, falling back to patch -p1${NC}"
-    patch -p1 -r - --force < "$PATCH"
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}FAILED: $PATCH${NC}"
-        exit 1
-    fi
-fi
-
-echo ""
-echo -e "${GREEN}Done! 0004 patch re-applied.${NC}"
+info "Done. $MODULE patches re-applied."
+info "0003-microg (frameworks/base) was NOT touched."
