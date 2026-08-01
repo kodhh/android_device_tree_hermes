@@ -1757,7 +1757,7 @@ index 0000000..42f0a3f
 diff --git a/services/camera/libcameraservice/Android.bp b/services/camera/libcameraservice/Android.bp
 --- a/services/camera/libcameraservice/Android.bp
 +++ b/services/camera/libcameraservice/Android.bp
-@@ -130,6 +130,7 @@ cc_library_shared {
+@@ -130,8 +130,9 @@ cc_library_shared {
      cflags: [
          "-Wall",
          "-Wextra",
@@ -1858,7 +1858,7 @@ index 40c8e19..22e676a 100644
      switch (msgType & ~CAMERA_MSG_PREVIEW_METADATA) {
          case CAMERA_MSG_PREVIEW_FRAME:
              client->handlePreviewData(msgType, dataPtr, metadata);
-@@ -1201,3 +1237,281 @@ status_t CameraClient::setVideoTarget(const sp<IGraphicBufferProducer>& bufferPr
+@@ -1201,3 +1237,282 @@ status_t CameraClient::setVideoTarget(const sp<IGraphicBufferProducer>& bufferPr
  }
  
  }; // namespace android

@@ -27,3 +27,29 @@ index 7948297..979198a 100644
                  if (mCodec->mExecutingState->active()) {
                      mCodec->mExecutingState->submitOutputBuffers();
                  }
+@@ -5619,6 +5621,25 @@
+     if (mTunneled) {
+         sendFormatChange();
+     }
+ }
++
++void ACodec::addKeyFormatChangesToRenderBufferNotification(sp<AMessage> &notify) {
++    AString mime;
++    CHECK(mOutputFormat->findString("mime", &mime));
++
++    if (mime == MEDIA_MIMETYPE_VIDEO_RAW && mNativeWindow != NULL) {
++        // notify renderer of the crop change and dataspace change
++        // NOTE: native window uses extended right-bottom coordinate
++        int32_t left, top, right, bottom;
++        if (mOutputFormat->findRect("crop", &left, &top, &right, &bottom)) {
++            notify->setRect("crop", left, top, right + 1, bottom + 1);
++        }
++
++        int32_t dataSpace;
++        if (mOutputFormat->findInt32("android._dataspace", &dataSpace)) {
++            notify->setInt32("dataspace", dataSpace);
++        }
++    }
++}
+ 
+ void ACodec::sendFormatChange() {
