@@ -21,6 +21,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196609 \
     ro.sf.lcd_density=480
 
+# Camera HAL3on1
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.camera.hal3on1.use_memfd=1 \
+    persist.camera.hal3on1.use_preview_window_stub=1 \
+    persist.camera.hal3on1.use_hwcomposer=0 \
+    persist.camera.hal3on1.use_sysfs_torch=0
+
 # APEX
 PRODUCT_PROPERTY_OVERRIDES += ro.apex.updatable=false
 
