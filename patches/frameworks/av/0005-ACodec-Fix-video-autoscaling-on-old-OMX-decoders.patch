@@ -1,45 +1,17 @@
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 52c4c0f..3da68f9 100644
+index 4f57c7c..3da68f9 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -64,6 +64,12 @@
- #include "include/SharedMemoryBuffer.h"
- #include <media/stagefright/omx/OMXUtils.h>
+@@ -68,6 +68,8 @@
+ #define MTK_HARDWARE
+ #endif
  
-+#ifndef MTK_HARDWARE
-+#define MTK_HARDWARE
-+#endif
-+
 +#define USE_LEGACY_RESCALING
 +
  namespace android {
  
  typedef hardware::media::omx::V1_0::IGraphicBufferSource HGraphicBufferSource;
-@@ -1119,6 +1125,9 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
-     }
- 
-     usage |= kVideoGrallocUsage;
-+#ifdef MTK_HARDWARE
-+    usage |= (GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN);
-+#endif
-     *finalUsage = usage;
- 
-     memset(&mLastNativeWindowCrop, 0, sizeof(mLastNativeWindowCrop));
-@@ -1127,8 +1136,13 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
-     ALOGV("gralloc usage: %#x(OMX) => %#x(ACodec)", omxUsage, usage);
-     return setNativeWindowSizeFormatAndUsage(
-             nativeWindow,
-+#ifdef MTK_HARDWARE
-+            def.format.video.nStride,
-+            def.format.video.nSliceHeight,
-+#else
-             def.format.video.nFrameWidth,
-             def.format.video.nFrameHeight,
-+#endif
-             def.format.video.eColorFormat,
-             mRotationDegrees,
-             usage,
-@@ -5819,6 +5833,25 @@ void ACodec::onOutputFormatChanged(sp<const AMessage> expectedFormat) {
+@@ -5831,6 +5833,25 @@ void ACodec::onOutputFormatChanged(sp<const AMessage> expectedFormat) {
      }
  }
  
@@ -65,7 +37,7 @@ index 52c4c0f..3da68f9 100644
  void ACodec::sendFormatChange() {
      AString mime;
      CHECK(mOutputFormat->findString("mime", &mime));
-@@ -8632,6 +8665,15 @@ bool ACodec::OutputPortSettingsChangedState::onOMXEvent(
+@@ -8644,6 +8665,15 @@ bool ACodec::OutputPortSettingsChangedState::onOMXEvent(
  
                  ALOGV("[%s] Output port now reenabled.", mCodec->mComponentName.c_str());
  
