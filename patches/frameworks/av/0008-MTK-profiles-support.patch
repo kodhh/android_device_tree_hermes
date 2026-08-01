@@ -1,8 +1,8 @@
 diff --git a/media/libmedia/MediaProfiles.cpp b/media/libmedia/MediaProfiles.cpp
-index 366d90d..e0cb34d 100644
+index 85768bd..c8f59af 100644
 --- a/media/libmedia/MediaProfiles.cpp
 +++ b/media/libmedia/MediaProfiles.cpp
-@@ -29,6 +29,10 @@
+@@ -31,6 +31,10 @@
  #include <OMX_Video.h>
  #include <sys/stat.h>
  
@@ -10,25 +10,23 @@ index 366d90d..e0cb34d 100644
 +#define MTK_HARDWARE
 +#endif
 +
- namespace android {
- 
- constexpr char const * const MediaProfiles::xmlFiles[];
-@@ -40,7 +44,10 @@ const MediaProfiles::NameToTagMap MediaProfiles::sVideoEncoderNameMap[] = {
-     {"h263", VIDEO_ENCODER_H263},
-     {"h264", VIDEO_ENCODER_H264},
+ #include <array>
+ #include <string>
+ #include <vector>
+@@ -90,6 +94,9 @@ const MediaProfiles::NameToTagMap MediaProfiles::sVideoEncoderNameMap[] = {
      {"m4v",  VIDEO_ENCODER_MPEG_4_SP},
--    {"hevc", VIDEO_ENCODER_HEVC}
-+    {"hevc", VIDEO_ENCODER_HEVC},
+     {"vp8",  VIDEO_ENCODER_VP8},
+     {"hevc", VIDEO_ENCODER_HEVC},
 +#ifdef MTK_HARDWARE
 +    {"h265", VIDEO_ENCODER_H265},
 +#endif
+     {"vp9",  VIDEO_ENCODER_VP9},
+     {"dolbyvision", VIDEO_ENCODER_DOLBY_VISION},
  };
- 
- const MediaProfiles::NameToTagMap MediaProfiles::sAudioEncoderNameMap[] = {
-@@ -49,6 +56,10 @@ const MediaProfiles::NameToTagMap MediaProfiles::sAudioEncoderNameMap[] = {
+@@ -114,6 +121,10 @@ const MediaProfiles::NameToTagMap MediaProfiles::sAudioEncoderNameMap[] = {
      {"aac",    AUDIO_ENCODER_AAC},
      {"heaac",  AUDIO_ENCODER_HE_AAC},
-     {"aaceld", AUDIO_ENCODER_AAC_ELD}, 
+     {"aaceld", AUDIO_ENCODER_AAC_ELD},
 +#ifdef MTK_HARDWARE
 +    {"vorbis", AUDIO_ENCODER_VORBIS},
 +    {"lpcm",  AUDIO_ENCODER_LPCM},
@@ -36,10 +34,10 @@ index 366d90d..e0cb34d 100644
      {"opus",   AUDIO_ENCODER_OPUS}
  };
  
-@@ -105,6 +116,50 @@ const MediaProfiles::NameToTagMap MediaProfiles::sCamcorderQualityNameMap[] = {
-     {"2k", CAMCORDER_QUALITY_2k},
-     {"timelapseqhd", CAMCORDER_QUALITY_TIME_LAPSE_QHD},
-     {"timelapse2k", CAMCORDER_QUALITY_TIME_LAPSE_2k},
+@@ -171,6 +182,50 @@ const MediaProfiles::NameToTagMap MediaProfiles::sCamcorderQualityNameMap[] = {
+     {"highspeed4kdci", CAMCORDER_QUALITY_HIGH_SPEED_4KDCI},
+ 
+     // Vendor-specific profiles
 +
 +#ifdef MTK_HARDWARE
 +    {"mtklow", CAMCORDER_QUALITY_MTK_LOW},
@@ -88,12 +86,12 @@ index 366d90d..e0cb34d 100644
  
  #if LOG_NDEBUG
 diff --git a/media/libmedia/include/media/MediaProfiles.h b/media/libmedia/include/media/MediaProfiles.h
-index 3e8e7c8..afc103a 100644
+index e75b694..f23a4e2 100644
 --- a/media/libmedia/include/media/MediaProfiles.h
 +++ b/media/libmedia/include/media/MediaProfiles.h
-@@ -21,6 +21,10 @@
- #include <utils/threads.h>
- #include <media/mediarecorder.h>
+@@ -23,6 +23,10 @@
+ 
+ #include <vector>
  
 +#ifndef MTK_HARDWARE
 +#define MTK_HARDWARE
@@ -102,10 +100,10 @@ index 3e8e7c8..afc103a 100644
  namespace android {
  
  enum camcorder_quality {
-@@ -38,7 +42,23 @@ enum camcorder_quality {
-     CAMCORDER_QUALITY_4KDCI = 10,
+@@ -41,7 +45,23 @@ enum camcorder_quality {
      CAMCORDER_QUALITY_QHD = 11,
-     CAMCORDER_QUALITY_2k = 12,
+     CAMCORDER_QUALITY_2K = 12,
+     CAMCORDER_QUALITY_8KUHD = 13,
 +#ifdef MTK_HARDWARE
 +    CAMCORDER_QUALITY_MTK_LOW              = 108,
 +    CAMCORDER_QUALITY_MTK_MEDIUM           = 109,
@@ -121,15 +119,15 @@ index 3e8e7c8..afc103a 100644
 +    CAMCORDER_QUALITY_MTK_FINE_4K2K        = 123,
 +    CAMCORDER_QUALITY_LIST_END             = 123,
 +#else
-     CAMCORDER_QUALITY_LIST_END = 12,
+     CAMCORDER_QUALITY_LIST_END = 13,
 +#endif
  
      CAMCORDER_QUALITY_TIME_LAPSE_LIST_START = 1000,
      CAMCORDER_QUALITY_TIME_LAPSE_LOW  = 1000,
-@@ -54,7 +74,23 @@ enum camcorder_quality {
-     CAMCORDER_QUALITY_TIME_LAPSE_4KDCI = 1010,
+@@ -58,7 +78,23 @@ enum camcorder_quality {
      CAMCORDER_QUALITY_TIME_LAPSE_QHD = 1011,
-     CAMCORDER_QUALITY_TIME_LAPSE_2k = 1012,
+     CAMCORDER_QUALITY_TIME_LAPSE_2K = 1012,
+     CAMCORDER_QUALITY_TIME_LAPSE_8KUHD = 1013,
 +#ifdef MTK_HARDWARE
 +    CAMCORDER_QUALITY_MTK_TIME_LAPSE_LOW              = 1108,
 +    CAMCORDER_QUALITY_MTK_TIME_LAPSE_MEDIUM           = 1109,
@@ -145,12 +143,12 @@ index 3e8e7c8..afc103a 100644
 +    CAMCORDER_QUALITY_MTK_TIME_LAPSE_FINE_4K2K        = 1123,
 +    CAMCORDER_QUALITY_TIME_LAPSE_LIST_END             = 1123,
 +#else
-     CAMCORDER_QUALITY_TIME_LAPSE_LIST_END = 1012,
+     CAMCORDER_QUALITY_TIME_LAPSE_LIST_END = 1013,
 +#endif
  
      CAMCORDER_QUALITY_HIGH_SPEED_LIST_START = 2000,
      CAMCORDER_QUALITY_HIGH_SPEED_LOW  = 2000,
-@@ -66,7 +102,23 @@ enum camcorder_quality {
+@@ -70,7 +106,23 @@ enum camcorder_quality {
      CAMCORDER_QUALITY_HIGH_SPEED_CIF = 2006,
      CAMCORDER_QUALITY_HIGH_SPEED_VGA = 2007,
      CAMCORDER_QUALITY_HIGH_SPEED_4KDCI = 2008,
@@ -175,12 +173,12 @@ index 3e8e7c8..afc103a 100644
  
  enum video_decoder {
 diff --git a/media/libmedia/include/media/mediarecorder.h b/media/libmedia/include/media/mediarecorder.h
-index 2dd4b7f..427b307 100644
+index dd18144..7958569 100644
 --- a/media/libmedia/include/media/mediarecorder.h
 +++ b/media/libmedia/include/media/mediarecorder.h
-@@ -26,6 +26,10 @@
- #include <media/IMediaDeathNotifier.h>
+@@ -27,6 +27,10 @@
  #include <media/MicrophoneInfo.h>
+ #include <android/content/AttributionSourceState.h>
  
 +#ifndef MTK_HARDWARE
 +#define MTK_HARDWARE
@@ -189,7 +187,7 @@ index 2dd4b7f..427b307 100644
  namespace android {
  
  class Surface;
-@@ -97,6 +101,11 @@ enum audio_encoder {
+@@ -98,6 +102,11 @@ enum audio_encoder {
      AUDIO_ENCODER_VORBIS = 6,
      AUDIO_ENCODER_OPUS = 7,
  
@@ -201,10 +199,11 @@ index 2dd4b7f..427b307 100644
      AUDIO_ENCODER_LIST_END // must be the last - used to validate the audio encoder type
  };
  
-@@ -108,7 +117,14 @@ enum video_encoder {
-     VIDEO_ENCODER_VP8 = 4,
-     VIDEO_ENCODER_HEVC = 5,
- 
+@@ -111,7 +120,15 @@ enum video_encoder {
+     VIDEO_ENCODER_VP9 = 6,
+     VIDEO_ENCODER_DOLBY_VISION = 7,
+     VIDEO_ENCODER_AV1 = 8,
++
 +#ifdef MTK_HARDWARE
 +    VIDEO_ENCODER_LIST_END, // must be the last - used to validate the video encoder type
 +    VIDEO_ENCODER_LIST_VENDOR_START = 1000,

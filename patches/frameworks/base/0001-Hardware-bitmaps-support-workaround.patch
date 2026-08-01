@@ -1,8 +1,24 @@
-diff --git a/core/jni/android/graphics/BitmapFactory.cpp b/core/jni/android/graphics/BitmapFactory.cpp
-index 3f05c3b5..1d553ddd 100644
---- a/core/jni/android/graphics/BitmapFactory.cpp
-+++ b/core/jni/android/graphics/BitmapFactory.cpp
-@@ -322,6 +322,38 @@ static jobject doDecode(JNIEnv* env, std::unique_ptr<SkStreamRewindable> stream,
+diff --git a/graphics/java/android/graphics/Bitmap.java b/graphics/java/android/graphics/Bitmap.java
+index 857af11..700f799 100644
+--- a/graphics/java/android/graphics/Bitmap.java
++++ b/graphics/java/android/graphics/Bitmap.java
+@@ -688,9 +688,9 @@ public final class Bitmap implements Parcelable {
+      */
+     public Bitmap copy(Config config, boolean isMutable) {
+         checkRecycled("Can't copy a recycled bitmap");
+-        if (config == Config.HARDWARE && isMutable) {
++        /*if (config == Config.HARDWARE && isMutable) {
+             throw new IllegalArgumentException("Hardware bitmaps are always immutable");
+-        }
++        }*/
+         noteHardwareBitmapSlowCall();
+         Bitmap b = nativeCopy(mNativePtr, config.nativeInt, isMutable);
+         if (b != null) {
+diff --git a/libs/hwui/jni/BitmapFactory.cpp b/libs/hwui/jni/BitmapFactory.cpp
+index 4e9daa4..e4fb254 100644
+--- a/libs/hwui/jni/BitmapFactory.cpp
++++ b/libs/hwui/jni/BitmapFactory.cpp
+@@ -315,6 +315,38 @@ static jobject doDecode(JNIEnv* env, std::unique_ptr<SkStreamRewindable> stream,
          scaledHeight = static_cast<int>(scaledHeight * scale + 0.5f);
      }
  
@@ -41,19 +57,3 @@ index 3f05c3b5..1d553ddd 100644
      android::Bitmap* reuseBitmap = nullptr;
      unsigned int existingBufferSize = 0;
      if (javaBitmap != nullptr) {
-diff --git a/graphics/java/android/graphics/Bitmap.java b/graphics/java/android/graphics/Bitmap.java
-index 44710178..e52f451d 100644
---- a/graphics/java/android/graphics/Bitmap.java
-+++ b/graphics/java/android/graphics/Bitmap.java
-@@ -682,9 +682,9 @@ public final class Bitmap implements Parcelable {
-      */
-     public Bitmap copy(Config config, boolean isMutable) {
-         checkRecycled("Can't copy a recycled bitmap");
--        if (config == Config.HARDWARE && isMutable) {
-+        /*if (config == Config.HARDWARE && isMutable) {
-             throw new IllegalArgumentException("Hardware bitmaps are always immutable");
--        }
-+        }*/
-         noteHardwareBitmapSlowCall();
-         Bitmap b = nativeCopy(mNativePtr, config.nativeInt, isMutable);
-         if (b != null) {

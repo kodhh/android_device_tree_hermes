@@ -1,8 +1,8 @@
 diff --git a/jni/fmr/Android.mk b/jni/fmr/Android.mk
-index 90cf5c3..150806d 100644
+index e21289e..bf805ac 100644
 --- a/jni/fmr/Android.mk
 +++ b/jni/fmr/Android.mk
-@@ -35,6 +35,11 @@ LOCAL_SHARED_LIBRARIES := \
+@@ -40,6 +40,11 @@ LOCAL_SHARED_LIBRARIES := \
      libmedia \
      liblog
  
@@ -11,6 +11,6 @@ index 90cf5c3..150806d 100644
 +    -Wno-unused-parameter \
 +    -Wno-unused-variable
 +
- LOCAL_MODULE := libfmjni
- LOCAL_MODULE_TAGS := optional
+ include $(BUILD_SHARED_LIBRARY)
  
+ endif # BOARD_HAVE_MTK_FM

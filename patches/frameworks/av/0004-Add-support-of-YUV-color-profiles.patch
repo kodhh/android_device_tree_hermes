@@ -1,8 +1,8 @@
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 55e8130..3053eac 100644
+index 3f7d9c2..5943aa1 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -3286,7 +3286,12 @@ status_t ACodec::setSupportedOutputFormat(bool getLegacyFlexibleFormat) {
+@@ -3472,7 +3472,12 @@ status_t ACodec::setSupportedOutputFormat(bool getLegacyFlexibleFormat) {
                  || format.eColorFormat == OMX_COLOR_FormatYUV420PackedPlanar
                  || format.eColorFormat == OMX_COLOR_FormatYUV420SemiPlanar
                  || format.eColorFormat == OMX_COLOR_FormatYUV420PackedSemiPlanar
@@ -17,18 +17,10 @@ index 55e8130..3053eac 100644
          }
          // find best legacy non-standard format
 diff --git a/media/libstagefright/Android.bp b/media/libstagefright/Android.bp
-index 7eab230..c80cf56 100644
+index e71f3b5..5c3780c 100644
 --- a/media/libstagefright/Android.bp
 +++ b/media/libstagefright/Android.bp
-@@ -203,6 +203,7 @@ cc_library {
-         "android.hidl.allocator@1.0",
-         "android.hardware.cas.native@1.0",
-         "android.hardware.media.omx@1.0",
-+        "libdl",
-     ],
- 
-     static_libs: [
-@@ -233,6 +234,7 @@ cc_library {
+@@ -235,6 +235,7 @@ cc_library_shared {
  
      export_include_dirs: [
          "include",
@@ -36,8 +28,16 @@ index 7eab230..c80cf56 100644
      ],
  
      cflags: [
+@@ -376,6 +377,7 @@ cc_library {
+         "android.hardware.cas.native@1.0",
+         "android.hardware.drm@1.0",
+         "android.hardware.media.omx@1.0",
++        "libdl",
+         "framework-permission-aidl-cpp",
+         "libaudioclient_aidl_conversion",
+         "packagemanager_aidl-cpp",
 diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
-index 3bca728..1c6805f 100644
+index 967c316..49bcc05 100644
 --- a/media/libstagefright/CameraSource.cpp
 +++ b/media/libstagefright/CameraSource.cpp
 @@ -42,6 +42,10 @@
@@ -51,7 +51,7 @@ index 3bca728..1c6805f 100644
  namespace android {
  
  static const int64_t CAMERA_SOURCE_TIMEOUT_NS = 3000000000LL;
-@@ -134,14 +138,34 @@ static int32_t getColorFormat(const char* colorFormat) {
+@@ -52,14 +56,34 @@ static int32_t getColorFormat(const char* colorFormat) {
          return -1;
      }
  
@@ -87,28 +87,34 @@ index 3bca728..1c6805f 100644
          return OMX_COLOR_FormatYUV420SemiPlanar;
      }
 diff --git a/media/libstagefright/colorconversion/Android.bp b/media/libstagefright/colorconversion/Android.bp
-index ba57497..a1f293d 100644
+index 7ff9b10..3f7e38d 100644
 --- a/media/libstagefright/colorconversion/Android.bp
 +++ b/media/libstagefright/colorconversion/Android.bp
-@@ -8,11 +8,13 @@ cc_library_static {
- 
-     include_dirs: [
-         "frameworks/native/include/media/openmax",
-+        "frameworks/av/media/libstagefright/colorconversion/inc",
-     ],
- 
+@@ -28,6 +28,7 @@ cc_library_static {
      shared_libs: [
          "libui",
          "libnativewindow",
 +        "libdl",
      ],
  
+     header_libs: [
+@@ -36,6 +37,11 @@ cc_library_static {
+         "media_plugin_headers",
+     ],
+ 
++    include_dirs: [
++        "frameworks/native/include/media/openmax",
++        "frameworks/av/media/libstagefright/colorconversion/inc",
++    ],
++
      static_libs: ["libyuv_static"],
+ 
+     cflags: ["-Werror"],
 diff --git a/media/libstagefright/colorconversion/ColorConverter.cpp b/media/libstagefright/colorconversion/ColorConverter.cpp
-index c491d80..046c7ab 100644
+index 0db588d..04e651f 100644
 --- a/media/libstagefright/colorconversion/ColorConverter.cpp
 +++ b/media/libstagefright/colorconversion/ColorConverter.cpp
-@@ -32,6 +32,46 @@
+@@ -33,6 +33,46 @@
  #include <functional>
  #include <sys/time.h>
  
@@ -155,7 +161,7 @@ index c491d80..046c7ab 100644
  #define USE_LIBYUV
  #define PERF_PROFILING 0
  
-@@ -79,6 +119,16 @@ ColorConverter::~ColorConverter() {
+@@ -228,6 +268,16 @@ ColorConverter::~ColorConverter() {
  }
  
  bool ColorConverter::isValid() const {
@@ -169,10 +175,10 @@ index c491d80..046c7ab 100644
 +        (mSrcFormat == OMX_MTK_COLOR_FormatYV12))
 +        return true;
 +#endif
-     switch (mSrcFormat) {
+     switch ((int32_t)mSrcFormat) {
          case OMX_COLOR_FormatYUV420Planar16:
              if (mDstFormat == OMX_COLOR_FormatYUV444Y410) {
-@@ -94,6 +144,13 @@ bool ColorConverter::isValid() const {
+@@ -243,6 +293,13 @@ bool ColorConverter::isValid() const {
          case OMX_QCOM_COLOR_FormatYVU420SemiPlanar:
          case OMX_TI_COLOR_FormatYUV420PackedSemiPlanar:
              return mDstFormat == OMX_COLOR_Format16bitRGB565;
@@ -186,8 +192,8 @@ index c491d80..046c7ab 100644
  
          case OMX_COLOR_FormatYUV420SemiPlanar:
  #ifdef USE_LIBYUV
-@@ -1034,4 +1091,161 @@ uint8_t *ColorConverter::initClip() {
-     return &mClip[-kClipMin];
+@@ -1254,4 +1311,161 @@ uint16_t *ColorConverter::initClip10Bit() {
+     return &mClip10Bit[-CLIP_RANGE_MIN_10BIT];
  }
  
 +#ifdef MTK_HARDWARE
@@ -1231,7 +1237,7 @@ index 0000000..a619bc8
 +
 +#endif  // __DP_DATA_TYPE_H__
 diff --git a/media/libstagefright/include/media/stagefright/ColorConverter.h b/media/libstagefright/include/media/stagefright/ColorConverter.h
-index 75b0d8e..aebd939 100644
+index da3267e..68d82d3 100644
 --- a/media/libstagefright/include/media/stagefright/ColorConverter.h
 +++ b/media/libstagefright/include/media/stagefright/ColorConverter.h
 @@ -25,6 +25,10 @@
@@ -1245,7 +1251,7 @@ index 75b0d8e..aebd939 100644
  namespace android {
  
  struct ColorConverter {
-@@ -113,6 +117,12 @@ private:
+@@ -136,6 +140,12 @@ private:
  
      ColorConverter(const ColorConverter &);
      ColorConverter &operator=(const ColorConverter &);
@@ -1259,7 +1265,7 @@ index 75b0d8e..aebd939 100644
  
  }  // namespace android
 diff --git a/media/libstagefright/omx/OMXUtils.cpp b/media/libstagefright/omx/OMXUtils.cpp
-index 1b8493a..d71f705 100644
+index 49b2dec..73bd168 100644
 --- a/media/libstagefright/omx/OMXUtils.cpp
 +++ b/media/libstagefright/omx/OMXUtils.cpp
 @@ -28,6 +28,10 @@
@@ -1273,7 +1279,7 @@ index 1b8493a..d71f705 100644
  namespace android {
  
  status_t StatusFromOMXError(OMX_ERRORTYPE err) {
-@@ -222,7 +226,11 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
+@@ -224,7 +228,11 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
          fmt != OMX_COLOR_FormatYUV420PackedPlanar &&
          fmt != OMX_COLOR_FormatYUV420SemiPlanar &&
          fmt != OMX_COLOR_FormatYUV420PackedSemiPlanar &&
@@ -1286,7 +1292,7 @@ index 1b8493a..d71f705 100644
          ALOGW("do not know color format 0x%x = %d", fmt, fmt);
          if (fmt == OMX_COLOR_FormatYUV420Planar16) {
              ALOGW("Cannot describe color format OMX_COLOR_FormatYUV420Planar16");
-@@ -259,6 +267,9 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
+@@ -261,6 +269,9 @@ bool DescribeDefaultColorFormat(DescribeColorFormat2Params &params) {
      image.mPlane[image.Y].mVertSubsampling = 1;
  
      switch ((int)fmt) {

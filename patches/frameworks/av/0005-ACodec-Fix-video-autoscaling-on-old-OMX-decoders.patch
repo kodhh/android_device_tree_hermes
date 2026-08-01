@@ -1,38 +1,48 @@
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 7948297..979198a 100644
+index 52c4c0f..3da68f9 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -65,6 +65,8 @@
- #define MTK_HARDWARE
- #endif
+@@ -64,6 +64,12 @@
+ #include "include/SharedMemoryBuffer.h"
+ #include <media/stagefright/omx/OMXUtils.h>
  
++#ifndef MTK_HARDWARE
++#define MTK_HARDWARE
++#endif
++
 +#define USE_LEGACY_RESCALING
 +
  namespace android {
  
- using binder::Status;
-@@ -8239,6 +8241,15 @@ bool ACodec::OutputPortSettingsChangedState::onOMXEvent(
+ typedef hardware::media::omx::V1_0::IGraphicBufferSource HGraphicBufferSource;
+@@ -1119,6 +1125,9 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+     }
  
-                 ALOGV("[%s] Output port now reenabled.", mCodec->mComponentName.c_str());
- 
-+#ifdef USE_LEGACY_RESCALING
-+                // Resolution is about to change
-+                // Make sure the decoder knows
-+                sp<AMessage> reply = new AMessage(kWhatOutputBufferDrained, mCodec);
-+                mCodec->onOutputFormatChanged();
-+                mCodec->addKeyFormatChangesToRenderBufferNotification(reply);
-+                mCodec->sendFormatChange();
+     usage |= kVideoGrallocUsage;
++#ifdef MTK_HARDWARE
++    usage |= (GRALLOC_USAGE_SW_WRITE_OFTEN | GRALLOC_USAGE_SW_READ_OFTEN);
 +#endif
-+
-                 if (mCodec->mExecutingState->active()) {
-                     mCodec->mExecutingState->submitOutputBuffers();
-                 }
-@@ -5619,6 +5621,25 @@
-     if (mTunneled) {
-         sendFormatChange();
+     *finalUsage = usage;
+ 
+     memset(&mLastNativeWindowCrop, 0, sizeof(mLastNativeWindowCrop));
+@@ -1127,8 +1136,13 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+     ALOGV("gralloc usage: %#x(OMX) => %#x(ACodec)", omxUsage, usage);
+     return setNativeWindowSizeFormatAndUsage(
+             nativeWindow,
++#ifdef MTK_HARDWARE
++            def.format.video.nStride,
++            def.format.video.nSliceHeight,
++#else
+             def.format.video.nFrameWidth,
+             def.format.video.nFrameHeight,
++#endif
+             def.format.video.eColorFormat,
+             mRotationDegrees,
+             usage,
+@@ -5819,6 +5833,25 @@ void ACodec::onOutputFormatChanged(sp<const AMessage> expectedFormat) {
      }
  }
-+
+ 
 +void ACodec::addKeyFormatChangesToRenderBufferNotification(sp<AMessage> &notify) {
 +    AString mime;
 +    CHECK(mOutputFormat->findString("mime", &mime));
@@ -51,5 +61,23 @@ index 7948297..979198a 100644
 +        }
 +    }
 +}
- 
++
  void ACodec::sendFormatChange() {
+     AString mime;
+     CHECK(mOutputFormat->findString("mime", &mime));
+@@ -8632,6 +8665,15 @@ bool ACodec::OutputPortSettingsChangedState::onOMXEvent(
+ 
+                 ALOGV("[%s] Output port now reenabled.", mCodec->mComponentName.c_str());
+ 
++#ifdef USE_LEGACY_RESCALING
++                // Resolution is about to change
++                // Make sure the decoder knows
++                sp<AMessage> reply = new AMessage(kWhatOutputBufferDrained, mCodec);
++                mCodec->onOutputFormatChanged();
++                mCodec->addKeyFormatChangesToRenderBufferNotification(reply);
++                mCodec->sendFormatChange();
++#endif
++
+                 if (mCodec->mExecutingState->active()) {
+                     mCodec->mExecutingState->submitOutputBuffers();
+                 }

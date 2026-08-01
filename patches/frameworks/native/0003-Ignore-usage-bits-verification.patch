@@ -1,5 +1,5 @@
 diff --git a/libs/ui/Gralloc2.cpp b/libs/ui/Gralloc2.cpp
-index 2dd11b1..3ebf980 100644
+index 995dded..7b0f11d 100644
 --- a/libs/ui/Gralloc2.cpp
 +++ b/libs/ui/Gralloc2.cpp
 @@ -115,7 +115,7 @@ status_t Gralloc2Mapper::validateBufferDescriptorInfo(
@@ -9,10 +9,10 @@ index 2dd11b1..3ebf980 100644
 -        return BAD_VALUE;
 +        //return BAD_VALUE;
      }
-     return NO_ERROR;
- }
+ 
+     // Gralloc2 implementations never understand non-BLOB with GPU_DATA_BUFFER
 diff --git a/libs/ui/Gralloc3.cpp b/libs/ui/Gralloc3.cpp
-index a203c80..9e21eb5 100644
+index a50e497..ebd1012 100644
 --- a/libs/ui/Gralloc3.cpp
 +++ b/libs/ui/Gralloc3.cpp
 @@ -106,7 +106,7 @@ status_t Gralloc3Mapper::validateBufferDescriptorInfo(
@@ -22,5 +22,5 @@ index a203c80..9e21eb5 100644
 -        return BAD_VALUE;
 +        //return BAD_VALUE;
      }
-     return NO_ERROR;
- }
+ 
+     // Gralloc3 implementations never understand non-BLOB with GPU_DATA_BUFFER

@@ -1,8 +1,8 @@
 diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
-index 55e8130..7948297 100644
+index 52c4c0f..4f57c7c 100644
 --- a/media/libstagefright/ACodec.cpp
 +++ b/media/libstagefright/ACodec.cpp
-@@ -61,6 +61,10 @@
+@@ -64,6 +64,10 @@
  #include "include/SharedMemoryBuffer.h"
  #include <media/stagefright/omx/OMXUtils.h>
  
@@ -12,8 +12,8 @@ index 55e8130..7948297 100644
 +
  namespace android {
  
- using binder::Status;
-@@ -1101,6 +1105,9 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+ typedef hardware::media::omx::V1_0::IGraphicBufferSource HGraphicBufferSource;
+@@ -1119,6 +1123,9 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
      }
  
      usage |= kVideoGrallocUsage;
@@ -23,7 +23,7 @@ index 55e8130..7948297 100644
      *finalUsage = usage;
  
      memset(&mLastNativeWindowCrop, 0, sizeof(mLastNativeWindowCrop));
-@@ -1109,8 +1116,13 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+@@ -1127,8 +1134,13 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
      ALOGV("gralloc usage: %#x(OMX) => %#x(ACodec)", omxUsage, usage);
      return setNativeWindowSizeFormatAndUsage(
              nativeWindow,

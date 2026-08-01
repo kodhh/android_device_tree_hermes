@@ -1,6 +1,6 @@
 diff --git a/libsuspend/autosuspend_earlysuspend.cpp b/libsuspend/autosuspend_earlysuspend.cpp
 new file mode 100644
-index 0000000..2e31cbb
+index 0000000..6615e3f
 --- /dev/null
 +++ b/libsuspend/autosuspend_earlysuspend.cpp
 @@ -0,0 +1,228 @@
@@ -232,16 +232,3 @@ index 0000000..2e31cbb
 +    close(sPowerStatefd);
 +    return NULL;
 +}
-\ No newline at end of file
-diff --git a/libsuspend/Android.bp b/libsuspend/Android.bp
-index c5f1f5e..0f835b0 100644
---- a/libsuspend/Android.bp
-+++ b/libsuspend/Android.bp
-@@ -4,6 +4,7 @@ cc_library {
-     name: "libsuspend",
-     srcs: [
-         "autosuspend.c",
-+        "autosuspend_earlysuspend.cpp",
-         "autosuspend_wakeup_count.cpp",
-     ],
-     export_include_dirs: ["include"],

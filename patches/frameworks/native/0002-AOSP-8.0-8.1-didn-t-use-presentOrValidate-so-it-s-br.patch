@@ -1,13 +1,29 @@
 diff --git a/services/surfaceflinger/DisplayHardware/HWComposer.cpp b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
-index 0cf48ae..c5529fc 100644
+index a6aee1f..d364577 100644
 --- a/services/surfaceflinger/DisplayHardware/HWComposer.cpp
 +++ b/services/surfaceflinger/DisplayHardware/HWComposer.cpp
-@@ -424,7 +424,7 @@ status_t HWComposer::prepare(DisplayId displayId, const compositionengine::Outpu
-     // The check below is incorrect.  We actually rely on HWC here to fall
-     // back to validate when there is any client layer.
+@@ -421,23 +421,7 @@ status_t HWComposer::getDeviceCompositionChanges(
+     // earliest time to present. Otherwise, we may present a frame too early.
+     // 2. There is no client composition. Otherwise, we first need to render the
+     // client target buffer.
+-    const bool canSkipValidate = [&] {
+-        // We must call validate if we have client composition
+-        if (frameUsesClientComposition) {
+-            return false;
+-        }
+-
+-        // If composer supports getting the expected present time, we can skip
+-        // as composer will make sure to prevent early presentation
+-        if (mComposer->isSupported(Hwc2::Composer::OptionalFeature::ExpectedPresentTime)) {
+-            return true;
+-        }
+-
+-        // composer doesn't support getting the expected present time. We can only
+-        // skip validate if we know that we are not going to present early.
+-        return std::chrono::steady_clock::now() >= earliestPresentTime ||
+-                previousPresentFence->getSignalTime() == Fence::SIGNAL_TIME_PENDING;
+-    }();
++    const bool canSkipValidate = false; // Always validate; we rely on HWC to fall back to validate when there is any client layer.
+ 
      displayData.validateWasSkipped = false;
--    if (!displayData.hasClientComposition) {
-+    if ((false)) { //!displayData.hasClientComposition) {
-         sp<Fence> outPresentFence;
-         uint32_t state = UINT32_MAX;
-         error = hwcDisplay->presentOrValidate(&numTypes, &numRequests, &outPresentFence , &state);
+     if (canSkipValidate) {
