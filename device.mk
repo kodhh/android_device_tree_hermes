@@ -43,7 +43,8 @@ PRODUCT_PACKAGES += \
     mtkui \
     libshim_mutexdestroy \
     libmtk_symbols \
-    libaeabi_shim
+    libaeabi_shim \
+    libperfservicenative
 
 # Vendor daemons (rebuild from source)
 PRODUCT_PACKAGES += \
