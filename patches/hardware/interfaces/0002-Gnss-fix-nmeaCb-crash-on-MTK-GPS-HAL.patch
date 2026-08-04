@@ -1,0 +1,16 @@
+diff --git a/gnss/1.0/default/Gnss.cpp b/gnss/1.0/default/Gnss.cpp
+index 32c131c..1ae7c42 100644
+--- a/gnss/1.0/default/Gnss.cpp
++++ b/gnss/1.0/default/Gnss.cpp
+@@ -261,7 +261,10 @@ void Gnss::nmeaCb(GpsUtcTime timestamp, const char* nmea, int length) {
+     }
+ 
+     android::hardware::hidl_string nmeaString;
+-    nmeaString.setToExternal(nmea, length);
++    // Some HALs (MTK gps.mt6795.so) pass a length that excludes the NUL
++    // terminator, tripping the Android 10 setToExternal() CHECK and aborting
++    // system_server. Let hidl_string compute strlen()+1 itself.
++    nmeaString.setToExternal(nmea, SIZE_MAX);
+     auto ret = sGnssCbIface->gnssNmeaCb(timestamp, nmeaString);
+     if (!ret.isOk()) {
+         ALOGE("%s: Unable to invoke callback", __func__);
