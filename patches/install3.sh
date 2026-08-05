@@ -8,10 +8,11 @@
 #   2. Re-apply ALL hardware/interfaces patches in order via git apply
 #
 # The GNSS patch fixes a system_server soft-reboot caused by the MTK
-# gps.mt6795.so HAL passing a NMEA length that excludes the NUL terminator:
-# Android 10's hidl_string::setToExternal() enforces CHECK(data[size]=='\0')
-# and aborts in Gnss::nmeaCb. setToExternal(nmea, SIZE_MAX) lets hidl_string
-# compute strlen()+1 itself.
+# gps.mt6795.so HAL passing an NMEA length that may include or exclude the
+# trailing NUL terminator (buffer not reliably NUL-terminated): Android 10's
+# hidl_string::setToExternal() enforces CHECK(data[size]=='\0') and aborts in
+# Gnss::nmeaCb. The sentence is copied into a NUL-terminated local buffer and
+# passed with the reported length.
 #
 # Usage:
 #   cd <ANDROID_ROOT>

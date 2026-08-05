@@ -6,7 +6,6 @@ service ril-daemon-mtk /vendor/bin/hw/rild
     group radio cache inet misc audio sdcard_r sdcard_rw log readproc wakelock system
     capabilities BLOCK_SUSPEND NET_ADMIN NET_RAW
     disabled
-    respawn
 
 on property:ril.mtk=1
     start ril-daemon-mtk

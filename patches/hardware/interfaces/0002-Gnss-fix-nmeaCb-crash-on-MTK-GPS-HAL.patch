@@ -1,16 +1,39 @@
 diff --git a/gnss/1.0/default/Gnss.cpp b/gnss/1.0/default/Gnss.cpp
-index 32c131c..1ae7c42 100644
+index 32c131c83d..1b3c9c165a 100644
 --- a/gnss/1.0/default/Gnss.cpp
 +++ b/gnss/1.0/default/Gnss.cpp
-@@ -261,7 +261,10 @@ void Gnss::nmeaCb(GpsUtcTime timestamp, const char* nmea, int length) {
+@@ -18,6 +18,7 @@
+ 
+ #include "Gnss.h"
+ #include <GnssUtils.h>
++#include <vector>
+ 
+ namespace android {
+ namespace hardware {
+@@ -260,8 +261,25 @@ void Gnss::nmeaCb(GpsUtcTime timestamp, const char* nmea, int length) {
+         return;
      }
  
++    if (nmea == nullptr || length <= 0) {
++        return;
++    }
++    if (length > 1024) {
++        ALOGE("%s: implausible NMEA length %d", __func__, length);
++        return;
++    }
++
++    // The MTK gps.mt6795.so HAL reports an NMEA length that may include or
++    // exclude the trailing NUL terminator and does not guarantee a
++    // NUL-terminated buffer. Android 10 hidl_string::setToExternal() requires
++    // data[size] == '\0' and aborts otherwise (soft-rebooting system_server),
++    // so copy the sentence into a NUL-terminated local buffer and pass the
++    // reported length.
++    std::vector<char> nmeaBuf(nmea, nmea + length);
++    nmeaBuf.push_back('\0');
++
      android::hardware::hidl_string nmeaString;
 -    nmeaString.setToExternal(nmea, length);
-+    // Some HALs (MTK gps.mt6795.so) pass a length that excludes the NUL
-+    // terminator, tripping the Android 10 setToExternal() CHECK and aborting
-+    // system_server. Let hidl_string compute strlen()+1 itself.
-+    nmeaString.setToExternal(nmea, SIZE_MAX);
++    nmeaString.setToExternal(nmeaBuf.data(), length);
      auto ret = sGnssCbIface->gnssNmeaCb(timestamp, nmeaString);
      if (!ret.isOk()) {
          ALOGE("%s: Unable to invoke callback", __func__);
