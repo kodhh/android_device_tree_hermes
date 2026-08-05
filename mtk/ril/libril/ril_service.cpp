@@ -3865,17 +3865,21 @@ int radio::getOperatorResponse(int slotId,
 
 	} else {
 	    char **resp = (char **) response;
-    RLOGD("getOperatorResponse: numStrings=%d", numStrings);
-	    char *p = (char*)getname(atoi(resp[0]));
-	    if (p == NULL) {
-			longName = numeric;
-			shortName = numeric;
+	    RLOGD("getOperatorResponse: numStrings=%d", numStrings);
+	    if (resp[0] == NULL) {
+		if (e == RIL_E_SUCCESS) responseInfo.error = RadioError::INVALID_RESPONSE;
 	    } else {
-			longName = convertCharPtrToHidlString(p);
+		char *p = (char*)getname(atoi(resp[0]));
+		if (p == NULL) {
+		    longName = numeric;
+		    shortName = numeric;
+		} else {
+		    longName = convertCharPtrToHidlString(p);
 		    if (strlen(p) > 24)
-			    shortName = numeric;
-			else
-			    shortName = longName;
+			shortName = numeric;
+		    else
+			shortName = longName;
+		}
 	    }
 	}
 	Return<void> retStatus = radioService[slotId]->mRadioResponse->getOperatorResponse(

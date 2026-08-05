@@ -74,8 +74,8 @@ static fd_set readFds;
 static int nfds = 0;
 
 static struct ril_event * watch_table[MAX_FD_EVENTS];
-static struct ril_event timer_list;
-static struct ril_event pending_list;
+static struct ril_event timer_list = { &timer_list, &timer_list, -1 };
+static struct ril_event pending_list = { &pending_list, &pending_list, -1 };
 
 #define DEBUG 0
 
