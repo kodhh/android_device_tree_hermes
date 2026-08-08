@@ -1,0 +1,28 @@
+diff --git a/audio/core/all-versions/default/StreamIn.cpp b/audio/core/all-versions/default/StreamIn.cpp
+index caf8bae..ba62214 100644
+--- a/audio/core/all-versions/default/StreamIn.cpp
++++ b/audio/core/all-versions/default/StreamIn.cpp
+@@ -514,15 +514,14 @@ Return<Result> StreamIn::setMicrophoneDirection(MicrophoneDirection direction) {
+ }
+ 
+ Return<Result> StreamIn::setMicrophoneFieldDimension(float zoom) {
+-    if (mStream->set_microphone_field_dimension == nullptr) {
+-        return Result::NOT_SUPPORTED;
+-    }
+-    if (std::isnan(zoom) || zoom < -1 || zoom > 1) {
+-        ALOGE("%s: Invalid zoom %f", __func__, zoom);
+-        return Result::INVALID_ARGUMENTS;
+-    }
+-    return Stream::analyzeStatus("set_microphone_field_dimension",
+-                                 mStream->set_microphone_field_dimension(mStream, zoom));
++    // MTK's legacy audio HAL (audio.primary.mt6795.so) is built against an
++    // older hardware/audio.h whose audio_stream_in struct is shorter and does
++    // not contain the set_microphone_field_dimension function pointer. Reading
++    // it at this offset yields uninitialized memory (not NULL), so the nullptr
++    // check below would pass and calling it crashes with SIGSEGV. This HAL
++    // never implements this API, so always report NOT_SUPPORTED.
++    (void) zoom;
++    return Result::NOT_SUPPORTED;
+ }
+ 
+ #endif

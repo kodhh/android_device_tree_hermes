@@ -1,0 +1,23 @@
+diff --git a/services/audiopolicy/enginedefault/src/Engine.cpp b/services/audiopolicy/enginedefault/src/Engine.cpp
+index 556c177..55973c2 100644
+--- a/services/audiopolicy/enginedefault/src/Engine.cpp
++++ b/services/audiopolicy/enginedefault/src/Engine.cpp
+@@ -317,7 +317,17 @@ audio_devices_t Engine::getDeviceForStrategyInt(legacy_strategy strategy,
+ 
+         if ((strategy == STRATEGY_SONIFICATION) ||
+                 (getForceUse(AUDIO_POLICY_FORCE_FOR_SYSTEM) == AUDIO_POLICY_FORCE_SYSTEM_ENFORCED)) {
+-            device = availableOutputDevicesType & AUDIO_DEVICE_OUT_SPEAKER;
++            // The legacy audio HAL (audio.primary.mt6795.so) has no routing
++            // entry for the combined SPEAKER|WIRED_HEADPHONE (0xa) device the
++            // framework computes when a notification plays while media is on a
++            // wired headset. It rejects such a patch (Err createAudioPatch 3636)
++            // and keeps the previous (speaker) route, so the headset never gets
++            // sound. When a wired device is available, route notifications to
++            // that single device instead of adding SPEAKER.
++            if ((availableOutputDevicesType & (AUDIO_DEVICE_OUT_WIRED_HEADSET |
++                                               AUDIO_DEVICE_OUT_WIRED_HEADPHONE)) == 0) {
++                device = availableOutputDevicesType & AUDIO_DEVICE_OUT_SPEAKER;
++            }
+         }
+ 
+         // if SCO headset is connected and we are told to use it, play ringtone over
