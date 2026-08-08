@@ -5,3 +5,6 @@
 
 # DT2W sysfs node
 /sys/android_touch/doubletap2wake    u:object_r:input_device:s0
+
+/protect_f(/.*)? u:object_r:protect_f_file:s0
+/protect_s(/.*)? u:object_r:protect_s_file:s0
