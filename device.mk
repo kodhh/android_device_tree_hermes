@@ -44,7 +44,8 @@ PRODUCT_PACKAGES += \
     libshim_mutexdestroy \
     libmtk_symbols \
     libaeabi_shim \
-    libperfservicenative
+    libperfservicenative \
+    libviagpsrpc
 
 # Vendor daemons (rebuild from source)
 PRODUCT_PACKAGES += \
