@@ -618,13 +618,6 @@ struct audio_hw_device {
     int (*set_voice_volume)(struct audio_hw_device *dev, float volume);
 
     /**
-     * set the audio volume for all audio activities other than voice call.
-     * Range between 0.0 and 1.0. If any value other than 0 is returned,
-     * the software mixer will emulate this capability.
-     */
-    int (*set_master_volume)(struct audio_hw_device *dev, float volume);
-
-    /**
      * Get the current master volume value for the HAL, if the HAL supports
      * master volume control.  AudioFlinger will query this value from the
      * primary audio HAL when the service starts and use the value for setting
@@ -632,6 +625,13 @@ struct audio_hw_device {
      * this method may leave it set to NULL.
      */
     int (*get_master_volume)(struct audio_hw_device *dev, float *volume);
+
+    /**
+     * set the audio volume for all audio activities other than voice call.
+     * Range between 0.0 and 1.0. If any value other than 0 is returned,
+     * the software mixer will emulate this capability.
+     */
+    int (*set_master_volume)(struct audio_hw_device *dev, float volume);
 
     /**
      * set_mode is called when the audio mode changes. AUDIO_MODE_NORMAL mode
@@ -693,27 +693,11 @@ struct audio_hw_device {
     void (*close_input_stream)(struct audio_hw_device *dev,
                                struct audio_stream_in *stream_in);
 
-    /** This method dumps the state of the audio hardware */
-    int (*dump)(const struct audio_hw_device *dev, int fd);
-
     /**
      * set the audio mute status for all audio activities.  If any value other
      * than 0 is returned, the software mixer will emulate this capability.
      */
     int (*set_master_mute)(struct audio_hw_device *dev, bool mute);
-
-    /**
-     * Get the current master mute status for the HAL, if the HAL supports
-     * master mute control.  AudioFlinger will query this value from the primary
-     * audio HAL when the service starts and use the value for setting the
-     * initial master mute across all HALs.  HALs which do not support this
-     * method may leave it set to NULL.
-     */
-    int (*get_master_mute)(struct audio_hw_device *dev, bool *mute);
-
-    /**
-     * Routing control
-     */
 
     /* Creates an audio patch between several source and sink ports.
      * The handle is allocated by the HAL and should be unique for this
@@ -724,6 +708,18 @@ struct audio_hw_device {
                                unsigned int num_sinks,
                                const struct audio_port_config *sinks,
                                audio_patch_handle_t *handle);
+
+    /**
+     * Get the current master mute status for the HAL, if the HAL supports
+     * master mute control.  AudioFlinger will query this value from the primary
+     * audio HAL when the service starts and use the value for setting the
+     * initial master mute across all HALs.  HALs which do not support this
+     * method may leave it set to NULL.
+     */
+    int (*get_master_mute)(struct audio_hw_device *dev, bool *mute);
+
+    /* Reserved slot, not used by the primary HAL */
+    int (*reserved)(struct audio_hw_device *dev);
 
     /* Release an audio patch */
     int (*release_audio_patch)(struct audio_hw_device *dev,
@@ -741,6 +737,9 @@ struct audio_hw_device {
     /* Set audio port configuration */
     int (*set_audio_port_config)(struct audio_hw_device *dev,
                          const struct audio_port_config *config);
+
+    /** This method dumps the state of the audio hardware */
+    int (*dump)(const struct audio_hw_device *dev, int fd);
 
 };
 typedef struct audio_hw_device audio_hw_device_t;

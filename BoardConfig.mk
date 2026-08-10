@@ -64,11 +64,6 @@ BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 
-# Root dirs for MTK protect (system-as-root: / is read-only, create at boot)
-BOARD_ROOT_EXTRA_FOLDERS := \
-    protect_f \
-    protect_s
-
 BOARD_ROOT_EXTRA_SYMLINKS := \
     /mnt/vendor/protect_f:/protect_f \
     /mnt/vendor/protect_s:/protect_s
