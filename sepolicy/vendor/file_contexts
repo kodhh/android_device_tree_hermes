@@ -3,8 +3,8 @@
 # Widevine DRM HAL service
 /vendor/bin/hw/android\.hardware\.drm@1\.1-service\.widevine    u:object_r:hal_drm_widevine_exec:s0
 
-# DT2W sysfs node
-/sys/android_touch/doubletap2wake    u:object_r:input_device:s0
+# DT2W sysfs node (dir + files, labeled for the power HAL to arm/disarm)
+/sys/android_touch(/.*)?    u:object_r:input_device:s0
 
 /mnt/vendor/protect_f(/.*)? u:object_r:protect_f_file:s0
 /mnt/vendor/protect_s(/.*)? u:object_r:protect_s_file:s0

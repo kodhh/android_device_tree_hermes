@@ -28,13 +28,26 @@
 #include <hardware/hardware.h>
 #include <hardware/power.h>
 
+/* Double-tap-to-wake node: write 1 when the display goes off
+ * (arm the FT5346 low-power gesture mode) and 0 when it comes back on
+ * (leave gesture mode). Driven here from the framework's authoritative
+ * display state instead of guessing from the backlight value.
+ * The node name matches vendor init.mt6795.rc and TARGET_TAP_TO_WAKE_NODE
+ * (both /sys/android_touch/doubletap2wake). */
+#define GESTURE_MODE_NODE "/sys/android_touch/doubletap2wake"
+
+int sysfs_write(char *path, char *s);
+
 static void power_init(struct power_module *module)
 {
 	if (module)
 		ALOGI("%s", __func__);
 }
 
-static void power_set_interactive(struct power_module *module __unused, int on __unused) {}
+static void power_set_interactive(struct power_module *module __unused, int on)
+{
+	sysfs_write(GESTURE_MODE_NODE, on ? "0" : "1");
+}
 
 int sysfs_write(char* path, char* s) {
 	char buf[80];

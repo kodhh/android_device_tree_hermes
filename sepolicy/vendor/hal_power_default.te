@@ -1,0 +1,7 @@
+# The power HAL (android.hardware.power@1.0-service) arms/disarms the software
+# double-tap-to-wake from setInteractive() by writing /sys/android_touch/doubletap2wake.
+# The sysfs attribute files are SECURITY class 'file' (not chr_file); keep chr_file
+# as well to match the /dev/input nodes and the existing mtk_hal_power convention.
+allow hal_power_default input_device:dir rw_dir_perms;
+allow hal_power_default input_device:file rw_file_perms;
+allow hal_power_default input_device:chr_file rw_file_perms;
