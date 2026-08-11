@@ -32,9 +32,10 @@
  * (arm the FT5346 low-power gesture mode) and 0 when it comes back on
  * (leave gesture mode). Driven here from the framework's authoritative
  * display state instead of guessing from the backlight value.
- * The node name matches vendor init.mt6795.rc and TARGET_TAP_TO_WAKE_NODE
- * (both /sys/android_touch/doubletap2wake). */
-#define GESTURE_MODE_NODE "/sys/android_touch/doubletap2wake"
+ * The gesture_mode node is the MTK gesture master switch on this kernel;
+ * file_contexts labels the whole /sys/android_touch/ dir so any node name
+ * under it is covered. */
+#define GESTURE_MODE_NODE "/sys/android_touch/gesture_mode"
 
 int sysfs_write(char *path, char *s);
 
