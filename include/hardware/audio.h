@@ -91,17 +91,6 @@ __BEGIN_DECLS
 /* Bluetooth SCO wideband */
 #define AUDIO_PARAMETER_KEY_BT_SCO_WB "bt_wbs"
 
-/* BT SCO headset name for debug */
-#define AUDIO_PARAMETER_KEY_BT_SCO_HEADSET_NAME "bt_headset_name"
-
-/* BT SCO HFP control */
-#define AUDIO_PARAMETER_KEY_HFP_ENABLE            "hfp_enable"
-#define AUDIO_PARAMETER_KEY_HFP_SET_SAMPLING_RATE "hfp_set_sampling_rate"
-#define AUDIO_PARAMETER_KEY_HFP_VOLUME            "hfp_volume"
-
-/* Set screen orientation */
-#define AUDIO_PARAMETER_KEY_ROTATION "rotation"
-
 /**
  *  audio stream parameters
  */
@@ -618,6 +607,13 @@ struct audio_hw_device {
     int (*set_voice_volume)(struct audio_hw_device *dev, float volume);
 
     /**
+     * set the audio volume for all audio activities other than voice call.
+     * Range between 0.0 and 1.0. If any value other than 0 is returned,
+     * the software mixer will emulate this capability.
+     */
+    int (*set_master_volume)(struct audio_hw_device *dev, float volume);
+
+    /**
      * Get the current master volume value for the HAL, if the HAL supports
      * master volume control.  AudioFlinger will query this value from the
      * primary audio HAL when the service starts and use the value for setting
@@ -625,13 +621,6 @@ struct audio_hw_device {
      * this method may leave it set to NULL.
      */
     int (*get_master_volume)(struct audio_hw_device *dev, float *volume);
-
-    /**
-     * set the audio volume for all audio activities other than voice call.
-     * Range between 0.0 and 1.0. If any value other than 0 is returned,
-     * the software mixer will emulate this capability.
-     */
-    int (*set_master_volume)(struct audio_hw_device *dev, float volume);
 
     /**
      * set_mode is called when the audio mode changes. AUDIO_MODE_NORMAL mode
@@ -693,21 +682,14 @@ struct audio_hw_device {
     void (*close_input_stream)(struct audio_hw_device *dev,
                                struct audio_stream_in *stream_in);
 
+    /** This method dumps the state of the audio hardware */
+    int (*dump)(const struct audio_hw_device *dev, int fd);
+
     /**
      * set the audio mute status for all audio activities.  If any value other
      * than 0 is returned, the software mixer will emulate this capability.
      */
     int (*set_master_mute)(struct audio_hw_device *dev, bool mute);
-
-    /* Creates an audio patch between several source and sink ports.
-     * The handle is allocated by the HAL and should be unique for this
-     * audio HAL module. */
-    int (*create_audio_patch)(struct audio_hw_device *dev,
-                               unsigned int num_sources,
-                               const struct audio_port_config *sources,
-                               unsigned int num_sinks,
-                               const struct audio_port_config *sinks,
-                               audio_patch_handle_t *handle);
 
     /**
      * Get the current master mute status for the HAL, if the HAL supports
@@ -718,8 +700,19 @@ struct audio_hw_device {
      */
     int (*get_master_mute)(struct audio_hw_device *dev, bool *mute);
 
-    /* Reserved slot, not used by the primary HAL */
-    int (*reserved)(struct audio_hw_device *dev);
+    /**
+     * Routing control
+     */
+
+    /* Creates an audio patch between several source and sink ports.
+     * The handle is allocated by the HAL and should be unique for this
+     * audio HAL module. */
+    int (*create_audio_patch)(struct audio_hw_device *dev,
+                               unsigned int num_sources,
+                               const struct audio_port_config *sources,
+                               unsigned int num_sinks,
+                               const struct audio_port_config *sinks,
+                               audio_patch_handle_t *handle);
 
     /* Release an audio patch */
     int (*release_audio_patch)(struct audio_hw_device *dev,
@@ -737,9 +730,6 @@ struct audio_hw_device {
     /* Set audio port configuration */
     int (*set_audio_port_config)(struct audio_hw_device *dev,
                          const struct audio_port_config *config);
-
-    /** This method dumps the state of the audio hardware */
-    int (*dump)(const struct audio_hw_device *dev, int fd);
 
 };
 typedef struct audio_hw_device audio_hw_device_t;
