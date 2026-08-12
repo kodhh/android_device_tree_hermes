@@ -6,3 +6,5 @@
 # DT2W sysfs node (dir + files, labeled for the power HAL to arm/disarm)
 /sys/android_touch(/.*)?    u:object_r:input_device:s0
 
+/protect_f u:object_r:protect_f_file:s0
+/protect_s u:object_r:protect_s_file:s0
