@@ -1,0 +1,47 @@
+Fix MTK audio@2.0-impl createAudioPatch NULL crash
+
+The MTK mt6795 HAL reports audio HAL version 3.0 (so the version()
+gate passes) but leaves create_audio_patch / release_audio_patch
+as NULL function pointers.  Android 10's AudioPolicyManager always
+routes output device changes through createAudioPatch (unlike 9.0
+which used the legacy setOutputDevices path), so the HIDL impl
+blindly jumps to the NULL pointer -> SIGSEGV / null pointer
+dereference in android.hardware.audio@2.0-service.
+
+Guard both pointers: supportsAudioPatches() now returns false when
+create_audio_patch is NULL (AudioFlinger PatchPanel then falls back
+to the software-bridge / legacy routing, exactly like 9.0), and
+createAudioPatch/releaseAudioPatch return NOT_SUPPORTED instead of
+crashing.
+
+diff --git a/audio/core/all-versions/default/Device.cpp b/audio/core/all-versions/default/Device.cpp
+index bec22df..f5ac518 100644
+--- a/audio/core/all-versions/default/Device.cpp
++++ b/audio/core/all-versions/default/Device.cpp
+@@ -251,7 +251,7 @@ Return<void> Device::openInputStream(int32_t ioHandle, const DeviceAddress& devi
+ #endif /* MAJOR_VERSION */
+ 
+ Return<bool> Device::supportsAudioPatches() {
+-    return version() >= AUDIO_DEVICE_API_VERSION_3_0;
++    return version() >= AUDIO_DEVICE_API_VERSION_3_0 && mDevice->create_audio_patch != nullptr;
+ }
+ 
+ Return<void> Device::createAudioPatch(const hidl_vec<AudioPortConfig>& sources,
+@@ -259,7 +259,7 @@ Return<void> Device::createAudioPatch(const hidl_vec<AudioPortConfig>& sources,
+                                       createAudioPatch_cb _hidl_cb) {
+     Result retval(Result::NOT_SUPPORTED);
+     AudioPatchHandle patch = 0;
+-    if (version() >= AUDIO_DEVICE_API_VERSION_3_0) {
++    if (version() >= AUDIO_DEVICE_API_VERSION_3_0 && mDevice->create_audio_patch != nullptr) {
+         std::unique_ptr<audio_port_config[]> halSources(HidlUtils::audioPortConfigsToHal(sources));
+         std::unique_ptr<audio_port_config[]> halSinks(HidlUtils::audioPortConfigsToHal(sinks));
+         audio_patch_handle_t halPatch = AUDIO_PATCH_HANDLE_NONE;
+@@ -275,7 +275,7 @@ Return<void> Device::createAudioPatch(const hidl_vec<AudioPortConfig>& sources,
+ }
+ 
+ Return<Result> Device::releaseAudioPatch(int32_t patch) {
+-    if (version() >= AUDIO_DEVICE_API_VERSION_3_0) {
++    if (version() >= AUDIO_DEVICE_API_VERSION_3_0 && mDevice->release_audio_patch != nullptr) {
+         return analyzeStatus(
+             "release_audio_patch",
+             mDevice->release_audio_patch(mDevice, static_cast<audio_patch_handle_t>(patch)));
