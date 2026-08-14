@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2018-2020 The LineageOS Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources>
+
+    <string name="device_settings_app_name">Hermes Settings</string>
+
+    <string name="ambient_display_title">Ambient display</string>
+    <string name="ambient_display_summary">Ambient display settings</string>
+    <string name="ambient_display_enable_title">Ambient display</string>
+    <string name="ambient_display_enable_summary">Briefly wake the screen on gestures and notifications</string>
+
+    <string name="pickup_sensor_title">Pick-up sensor</string>
+    <string name="pick_up_gesture_title">Pick up to wake</string>
+    <string name="pick_up_gesture_summary">Show lockscreen when the device is picked up</string>
+    <string name="raise_to_wake_gesture_title">Raise to wake</string>
+    <string name="raise_to_wake_gesture_summary">Wake up the device instead of pulsing the lockscreen</string>
+
+    <string name="proximity_sensor_title">Proximity sensor</string>
+    <string name="hand_wave_gesture_title">Hand wave</string>
+    <string name="hand_wave_gesture_summary">Wave your hand over the top of the device to show lockscreen</string>
+    <string name="pocket_gesture_title">In-pocket detection</string>
+    <string name="pocket_gesture_summary">Show lockscreen when the device is pulled out of the pocket</string>
+
+</resources>

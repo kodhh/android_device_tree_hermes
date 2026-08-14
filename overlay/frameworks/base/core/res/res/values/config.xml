@@ -232,9 +232,6 @@
     <!-- Whether device supports double tap to wake -->
     <bool name="config_supportDoubleTapWake">true</bool>
 
-    <!-- Doze: use the TYPE_PICK_UP_GESTURE sensor as a pulse signal (pick up to wake) -->
-    <bool name="config_dozePulsePickup">true</bool>
-
     <!-- Doze: allow dreams/doze to start while on battery (pick up to wake, ambient display) -->
     <bool name="config_dreamsEnabledOnBattery">true</bool>
 
