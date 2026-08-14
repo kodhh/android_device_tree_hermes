@@ -1,6 +1,59 @@
+From 7edf64300981615e02c33aec05cf268ab30cd6e3 Mon Sep 17 00:00:00 2001
+From: Dinolek <18579460+Dinolek@users.noreply.github.com>
+Date: Tue, 11 Feb 2020 19:55:04 +0100
+Subject: [PATCH] libsuspend: readd earlysuspend
+
+Change-Id: I99810810fc4b3dd2c88f291f5784987c5c609910
+---
+ libsuspend/Android.bp                   |   1 +
+ libsuspend/autosuspend.c                |  12 +-
+ libsuspend/autosuspend_earlysuspend.cpp | 228 ++++++++++++++++++++++++
+ libsuspend/autosuspend_ops.h            |   1 +
+ 4 files changed, 241 insertions(+), 1 deletion(-)
+ create mode 100644 libsuspend/autosuspend_earlysuspend.cpp
+
+diff --git a/libsuspend/Android.bp b/libsuspend/Android.bp
+index b3e36c2..f7c6310 100644
+--- a/libsuspend/Android.bp
++++ b/libsuspend/Android.bp
+@@ -5,4 +5,5 @@ cc_library {
+     srcs: [
+         "autosuspend.c",
++        "autosuspend_earlysuspend.cpp",
+         "autosuspend_wakeup_count.cpp",
+     ],
+     export_include_dirs: ["include"],
+diff --git a/libsuspend/autosuspend.c b/libsuspend/autosuspend.c
+index b87f59c..607025c 100644
+--- a/libsuspend/autosuspend.c
++++ b/libsuspend/autosuspend.c
+@@ -32,12 +32,22 @@ static int autosuspend_init(void) {
+         return 0;
+     }
+ 
++    autosuspend_ops = autosuspend_earlysuspend_init();
++    if (autosuspend_ops) {
++        goto out;
++    }
++
+     autosuspend_ops = autosuspend_wakeup_count_init();
+-    if (autosuspend_ops == NULL) {
++    if (autosuspend_ops) {
++        goto out;
++    }
++
++    if (!autosuspend_ops) {
+         ALOGE("failed to initialize autosuspend");
+         return -1;
+     }
+ 
++out:
+     ALOGV("autosuspend initialized");
+     return 0;
+ }
 diff --git a/libsuspend/autosuspend_earlysuspend.cpp b/libsuspend/autosuspend_earlysuspend.cpp
 new file mode 100644
-index 0000000..2e31cbb
+index 0000000..6615e3f
 --- /dev/null
 +++ b/libsuspend/autosuspend_earlysuspend.cpp
 @@ -0,0 +1,228 @@
@@ -232,16 +285,18 @@ index 0000000..2e31cbb
 +    close(sPowerStatefd);
 +    return NULL;
 +}
-\ No newline at end of file
-diff --git a/libsuspend/Android.bp b/libsuspend/Android.bp
-index c5f1f5e..0f835b0 100644
---- a/libsuspend/Android.bp
-+++ b/libsuspend/Android.bp
-@@ -4,6 +4,7 @@ cc_library {
-     name: "libsuspend",
-     srcs: [
-         "autosuspend.c",
-+        "autosuspend_earlysuspend.cpp",
-         "autosuspend_wakeup_count.cpp",
-     ],
-     export_include_dirs: ["include"],
+diff --git a/libsuspend/autosuspend_ops.h b/libsuspend/autosuspend_ops.h
+index b0024c8..a21f207 100644
+--- a/libsuspend/autosuspend_ops.h
++++ b/libsuspend/autosuspend_ops.h
+@@ -25,6 +25,7 @@ struct autosuspend_ops {
+ };
+ 
+ __BEGIN_DECLS
++struct autosuspend_ops *autosuspend_earlysuspend_init(void);
+ struct autosuspend_ops *autosuspend_wakeup_count_init(void);
+ __END_DECLS
+ 
+-- 
+2.25.0
+
