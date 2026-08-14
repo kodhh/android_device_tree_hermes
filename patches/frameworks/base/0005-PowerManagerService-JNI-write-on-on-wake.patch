@@ -1,0 +1,33 @@
+diff --git a/services/core/jni/com_android_server_power_PowerManagerService.cpp b/services/core/jni/com_android_server_power_PowerManagerService.cpp
+index 137bd9751..3d7f5ccca 100644
+--- a/services/core/jni/com_android_server_power_PowerManagerService.cpp
++++ b/services/core/jni/com_android_server_power_PowerManagerService.cpp
+@@ -18,6 +18,10 @@
+ 
+ //#define LOG_NDEBUG 0
+ 
++#include <fcntl.h>
++#include <string.h>
++#include <unistd.h>
++
+ #include <android/hardware/power/1.1/IPower.h>
+ #include <android/system/suspend/1.0/ISystemSuspend.h>
+ #include <android/system/suspend/ISuspendControlService.h>
+@@ -268,6 +272,17 @@
+         gSuspendBlocker = suspendHal->acquireWakeLock(WakeLockType::PARTIAL,
+                 "PowerManager.SuspendLockout");
+     }
++    // Hermes uses the legacy earlysuspend power model: the fb/LCM panel only
++    // resumes when "on" is written to /sys/power/state. SystemSuspend only
++    // ever writes "mem", so the panel would stay stuck after a wake from
++    // earlysuspend. Writing "on" is a no-op when the device is already awake.
++    int fd = TEMP_FAILURE_RETRY(open("/sys/power/state", O_RDWR));
++    if (fd >= 0) {
++        TEMP_FAILURE_RETRY(write(fd, "on", sizeof("on") - 1));
++        close(fd);
++    } else {
++        ALOGE("Error opening /sys/power/state: %s", strerror(errno));
++    }
+ }
+ 
+ static jint nativeGetFeature(JNIEnv* /* env */, jclass /* clazz */, jint featureId) {
